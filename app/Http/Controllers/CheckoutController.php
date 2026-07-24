@@ -18,6 +18,7 @@ use App\Models\Transaction;
 use App\Models\TransactionLine;
 use App\Models\VendorOrder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
 
 class CheckoutController extends Controller
@@ -177,7 +178,8 @@ class CheckoutController extends Controller
 
             return response()->json([
                 'success' => true,
-                'url'     => route('front.confirmOrder', [$sell->id]),
+                //'url'     => route('front.confirmOrder', [$sell->id]),
+                'url'     => route('front.confirmOrder', [urlencode(Crypt::encryptString($sell->id))]),
                 'msg'     => 'Checkout Successfully..!!'
             ]);
         } catch (\Exception $e) {
@@ -216,8 +218,9 @@ class CheckoutController extends Controller
         ]);
     }
 
-    public function confirmOrder($id)
+    public function confirmOrder($urlid)
     {
+        $id = Crypt::decryptString(urldecode($urlid));
         $sell = Transaction::find($id);
         $products = Product::with('variation')
             ->where('products.is_new', 0)
@@ -260,6 +263,7 @@ class CheckoutController extends Controller
             $today = now()->format('Y-m-d');
 
             $item = Coupon::where('code', $request->code)
+                ->where('status', 1)
                 ->where(function ($row) use ($total) {
                     $row->where('minimum_amount', '0')
                         ->orWhereNull('minimum_amount')
@@ -285,7 +289,7 @@ class CheckoutController extends Controller
                 'msg'     => 'অবৈধ বা মেয়াদোত্তীর্ণ কুপন কোড!'
             ]);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Coupon Error: ' . $e->getMessage());
+            //\Illuminate\Support\Facades\Log::error('Coupon Error: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,

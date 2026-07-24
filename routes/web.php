@@ -194,7 +194,7 @@ Route::group(['as'=>'front.'], function() {
     });
     
 
-    Route::resource('carts',FCN\CartController::class);
+    Route::resource('carts',FCN\CartController::class);//index method is not using.
     
     
     Route::get('/coupon-discount',[FCN\CheckoutController::class,'getCouponDiscount'])->name('getCouponDiscount');
