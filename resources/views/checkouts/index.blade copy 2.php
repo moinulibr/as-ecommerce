@@ -17,7 +17,7 @@
                         </div>
                         <div>
                             <h2 class="text-xl md:text-2xl font-bold text-gray-900">Billing Details</h2>
-                            <p class="text-xs text-gray-500">পণ্য ডেলিভারির জন্য আপনার প্রয়োজনীয় তথ্য দিন</p>
+                            <p class="text-xs text-gray-500">পণ্য ডেলিভারির জন্য আপনার প্রয়োজনীয় তথ্য দিন</p>
                         </div>
                     </div>
                     
@@ -27,7 +27,7 @@
                             <label class="block text-sm font-semibold mb-1.5 text-gray-900">
                                 আপনার নাম <span class="text-xs text-gray-400 font-normal">(Full Name)</span> <span class="text-red-500">*</span>
                             </label>
-                            <input type="text" name="name" placeholder="যেমন: মোঃ মইনুল ইসলাম" 
+                            <input type="text" name="name" placeholder="যেমন: মোঃ মোইনুল ইসলাম" 
                                 class="w-full bg-gray-50 border border-gray-200 rounded-lg py-3 px-4 text-sm text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none transition">
                             <div class="error-name mt-1 text-xs text-red-500"></div>
                         </div>
@@ -77,11 +77,18 @@
                 <div class="lg:col-span-6 space-y-4" id="checkout_data">
                     @include('checkouts.data')
                 </div>
-
             </div>
+            
         </div>
     </form>
 </div>
+
+<!-- Modal -->
+<div id="addressModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center hidden z-50">
+    <div class="bg-white p-6 rounded-xl shadow-xl max-w-md w-full mx-4">
+    </div>
+</div>
+@endsection
 
 @push('js')
 <script>
@@ -96,6 +103,7 @@ $(document).ready(function() {
                 'X-Requested-With': 'XMLHttpRequest'
             },
             success: function(htmlResponse) {
+                // শুধুমাত্র Order Summary Container-এ partial HTML টুকু রিপ্লেস হবে
                 $('#checkout_data').html(htmlResponse);
             },
             error: function() {
@@ -104,7 +112,7 @@ $(document).ready(function() {
         });
     }
 
-    // ২. UI-Friendly Toast Notification
+    // ২. UI-Friendly Toast Notification (Browser Alert-এর বদলে)
     function showToast(message, type = 'success') {
         let bgColor = type === 'success' ? 'bg-green-600' : 'bg-red-500';
         let toastHtml = `
@@ -142,10 +150,10 @@ $(document).ready(function() {
         });
     });
 
-    // ৪. Coupon Apply AJAX Handler
+   // ৪. Coupon Apply AJAX Handler (Updated & Fixed)
     $(document).on('click', '#coupon_apply', function(e) {
         e.preventDefault();
-        e.stopPropagation();
+        e.stopPropagation(); // Form Submission এবং Event Bubbling বন্ধ করবে
 
         let $btn = $(this);
         let couponCode = $('#coupon_code').val();
@@ -161,17 +169,23 @@ $(document).ready(function() {
 
         $.ajax({
             url: targetUrl,
-            type: "GET",
+            type: "GET", // GET Method বজায় রাখা হলো
             data: {
                 code: couponCode
             },
-            dataType: "json",
+            dataType: "json", // Explicitly JSON Expect করা হচ্ছে
             success: function(response) {
                 $btn.html(originalText).prop('disabled', false);
 
                 if (response.success) {
                     showToast(response.msg || 'কুপন সফলভাবে প্রয়োগ করা হয়েছে!', 'success');
-                    reloadCartSummary();
+                    
+                    // Cart Summary Update Execution
+                    if (typeof reloadCartSummary === "function") {
+                        reloadCartSummary();
+                    } else if (response.html && $('#cart_summary_container').length) {
+                        $('#cart_summary_container').html(response.html);
+                    }
                 } else {
                     showToast(response.msg || 'অবৈধ বা মেয়াদোত্তীর্ণ কুপন কোড!', 'error');
                 }
@@ -183,7 +197,7 @@ $(document).ready(function() {
             }
         });
 
-        return false;
+        return false; // Stop form submit behavior
     });
 
 });
@@ -200,4 +214,3 @@ function closeModal() {
 }
 </script>
 @endpush
-@endsection

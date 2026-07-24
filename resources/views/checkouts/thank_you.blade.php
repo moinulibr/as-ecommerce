@@ -1,6 +1,8 @@
 @extends('layouts.app')
 @section('content')
 <div class="container mx-auto p-4">
+
+    {{--
     <div class="max-w-3xl w-full mx-auto rounded-lg p-6">
         <!-- Success Icon -->
         <div class="flex justify-center mb-4">
@@ -59,6 +61,99 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+    --}}
+
+    <div class="max-w-2xl w-full mx-auto my-8 p-4 md:p-6 bg-white rounded-2xl shadow-sm border border-slate-100">
+        <!-- Success Icon Header -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center bg-emerald-100 text-emerald-600 rounded-full w-20 h-20 mb-4 ring-8 ring-emerald-50">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+            </div>
+            <h1 class="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">
+                {{ __('messages.thank_you_purchase') }}
+            </h1>
+            <p class="text-slate-500 mt-2 text-sm md:text-base">
+                {{ __('messages.order_number_is') }} <span class="font-bold text-slate-800">#{{ $sell->invoice_no }}</span>
+            </p>
+        </div>
+
+        <!-- Main Order Details Card -->
+        <div class="bg-slate-50 rounded-xl p-5 border border-slate-200/60 mb-6">
+            <!-- Date & Status Row -->
+            <div class="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-slate-200/80">
+                <div>
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Order Date</span>
+                    <span class="text-sm font-semibold text-slate-700">{{ dateFormate($sell->transaction_date) }}</span>
+                </div>
+                <div>
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        Order Placed
+                    </span>
+                </div>
+            </div>
+
+            <!-- Customer & Shipping Details (Directly via $sell->contact) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 py-4 border-b border-slate-200/80 text-sm">
+                <div>
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">Customer Info</span>
+                    <p class="font-bold text-slate-800">{{ $sell->contact->name ?? 'N/A' }}</p>
+                    <p class="text-slate-600 font-mono text-xs mt-0.5">{{ $sell->contact->mobile ?? '' }}</p>
+                    @if(!empty($sell->contact->email))
+                        <p class="text-slate-500 text-xs mt-0.5">{{ $sell->contact->email }}</p>
+                    @endif
+                </div>
+                <div>
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">Shipping Address</span>
+                    <p class="text-slate-700 leading-relaxed font-medium">{{ $sell->contact->address ?? 'N/A' }}</p>
+                </div>
+            </div>
+
+            <!-- Customer Order Note -->
+            @if(!empty($sell->note))
+                <div class="py-3 border-b border-slate-200/80">
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">Order Note</span>
+                    <p class="text-xs text-slate-600 italic bg-white p-2.5 rounded-lg border border-slate-200/60">"{{ $sell->note }}"</p>
+                </div>
+            @endif
+
+            <!-- Payment & Total Section -->
+            <div class="pt-4 flex items-end justify-between">
+                <div>
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Payment Method</span>
+                    <span class="text-sm font-semibold text-slate-700 capitalize">
+                        {{ str_replace('_', ' ', $sell->payment_method) }}
+                    </span>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Total Amount</span>
+                    <span class="text-2xl font-bold text-blue-600 tracking-tight">{{ priceFormate($sell->final_amount) }}</span>
+                    <span class="text-[11px] text-slate-400 block">{{ __('messages.vat_included') }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instruction Info Note -->
+        <div class="flex items-start gap-3 p-4 bg-blue-50/70 rounded-xl border border-blue-100 mb-8 text-xs md:text-sm text-blue-900">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-blue-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>{{ __('messages.track_delivery_instruction') }}</span>
+        </div>
+
+        <!-- Continue Shopping Button -->
+        <div class="flex justify-center">
+            <a href="{{ route('front.products.index') }}" 
+            class="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-base rounded-xl shadow-md hover:shadow-lg transition-all duration-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+                <span>{{ __('messages.continue_shopping') }}</span>
+            </a>
         </div>
     </div>
 

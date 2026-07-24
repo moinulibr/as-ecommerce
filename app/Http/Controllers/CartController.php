@@ -20,9 +20,8 @@ class CartController extends Controller
 
 
     public function index(){
+        return redirect()->route('front.home')->with('error', 'This section is temporarily disabled.');
         $cart = session()->get('cart', []);
-        
-    
         
         // usort($cart, function($a, $b) {
         //     return $a['user_id'] <=> $b['user_id'];

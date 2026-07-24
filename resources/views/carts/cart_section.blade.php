@@ -62,6 +62,7 @@
         @endif
     </div>
     <!-- Footer -->
+    {{--
     <div class="p-6 border-t border-gray-200">
         <div class="flex justify-between text-gray-800 font-medium mb-4">
             <span>{{ __('messages.total') }}:</span>
@@ -73,4 +74,59 @@
             <a href="{{ route('front.checkouts.index')}}" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">{{ __('messages.proceed_to_checkout') }}</a>
         </div>
     </div>
+    --}}
+    {{--<div class="p-5 bg-slate-50/80 border-t border-slate-200/80 rounded-b-xl">
+        <!-- Total Amount Row -->
+        <div class="flex items-center justify-between mb-4 pb-3 border-b border-dashed border-slate-300/70">
+            <span class="text-sm font-semibold uppercase tracking-wider text-slate-500">
+                {{ __('messages.total') }}
+            </span>
+            <span id="cartTotal" class="text-xl font-bold text-slate-900 tracking-tight">
+                {{ priceFormate($total) }}
+            </span>
+        </div>
+
+        <!-- Action Buttons Row -->
+        <div class="grid grid-cols-2 gap-3">
+            <!-- View Cart Button -->
+            <a href="{{ route('front.carts.index') }}" 
+            class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-700 font-medium text-sm rounded-lg border border-slate-300 shadow-sm hover:shadow transition-all duration-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+                <span>{{ __('messages.proceed_to_cart') }}</span>
+            </a>
+
+            <!-- Checkout Button -->
+            <a href="{{ route('front.checkouts.index') }}" 
+            class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm rounded-lg shadow-sm hover:shadow-md transition-all duration-200">
+                <span>{{ __('messages.proceed_to_checkout') }}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+            </a>
+        </div>
+    </div>--}}
+
+    <div class="p-5 bg-slate-50/80 border-t border-slate-200/80 rounded-b-xl">
+        <!-- Total Amount Row -->
+        <div class="flex items-center justify-between mb-4 pb-3 border-b border-dashed border-slate-300/70">
+            <span class="text-sm font-semibold uppercase tracking-wider text-slate-500">
+                {{ __('messages.total') }}
+            </span>
+            <span id="cartTotal" class="text-xl font-bold text-slate-900 tracking-tight">
+                {{ priceFormate($total) }}
+            </span>
+        </div>
+
+        <!-- Direct Checkout Button (1-Click Flow) -->
+        <a href="{{ route('front.checkouts.index') }}" 
+        class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-base rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
+            <span>Proceed to Checkout</span>
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+        </a>
+    </div>
+
 </div>
