@@ -40,6 +40,7 @@ return [
     'name_desc' => 'বিপরীত বর্ণানুক্রমিক ক্রমে [Z-A]',
     'select_brand' => 'ব্র্যান্ড নির্বাচন করুন',
     'add_to_cart' => 'কার্টে যোগ করুন',
+    'updated_to_cart' => 'কার্টে পরিবর্তন করুন',
     'reviews' => 'রিভিউ',
     'similar_products' => 'সদৃশ পণ্য',
     'product_reviews' => 'পণ্যের রিভিউ',

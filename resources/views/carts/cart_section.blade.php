@@ -13,46 +13,46 @@
         @php
           $cart = session()->get('cart', []);
           $total=0;
-       @endphp
+        @endphp
        @if($cart)
        
-       @foreach($cart as $key=>$item)
-           @php
-           $total +=$item['price']*$item['quantity']; 
-           @endphp
+        @foreach($cart as $key=>$item)
+            @php
+            $total +=$item['price']*$item['quantity']; 
+            @endphp
 
-        <div class="flex items-center border-b border-gray-200 pb-4">
-            <img src="{{ $item['image']}}"
-                alt="Joyroom Shower" class="w-16 h-16 object-cover rounded-md mr-4">
-            <div class="flex-1">
-                <h3 class="text-gray-800 font-medium">{{ $item['name']}}</h3>
-                @if($item['variation_name'] !='dummy')
-                <p class="text-gray-600 text-sm">{{ $item['variation_name']}}</p>
-                @endif
-                <p class="text-orange-500 font-medium"> {{ priceFormate($item['price'])}} 
-                
-                @if($item['discount'] >0)
-                    <span class="line-through text-gray-400 text-xs"> {{$item['old_price'] }} </span>
-                @endif
-                </p>
-            </div>
-            <div class="flex items-center" data-href="{{ route('front.carts.edit',[$key])}}">
-                <button type="button" class="qtybtn px-2 sm:px-3 py-1 text-gray-500 text-sm  border">-</button>
-                <input type="text" id="quantity-{{$key}}" value="{{ $item['quantity']}}" min="1" data-max="{{ $item['qty_available'] }}"
-                    class="w-8 sm:w-10 text-center border py-1 text-xs sm:text-sm">
-                <button type="button" class="qtybtn px-2 sm:px-3 py-1 text-gray-500 text-sm border quantity-plus mr-2">+</button>
+                <div class="flex items-center border-b border-gray-200 pb-4">
+                    <img src="{{ $item['image']}}"
+                        alt="Joyroom Shower" class="w-16 h-16 object-cover rounded-md mr-4">
+                    <div class="flex-1">
+                        <h3 class="text-gray-800 font-medium">{{ $item['name']}}</h3>
+                        @if($item['variation_name'] !='dummy')
+                        <p class="text-gray-600 text-sm">{{ $item['variation_name']}}</p>
+                        @endif
+                        <p class="text-orange-500 font-medium"> {{ priceFormate($item['price'])}} 
+                        
+                        @if($item['discount'] >0)
+                            <span class="line-through text-gray-400 text-xs"> {{$item['old_price'] }} </span>
+                        @endif
+                        </p>
+                    </div>
+                    <div class="flex items-center" data-href="{{ route('front.carts.edit',[$key])}}">
+                        <button type="button" class="qtybtn px-2 sm:px-3 py-1 text-gray-500 text-sm  border">-</button>
+                        <input type="text" id="quantity-{{$key}}" value="{{ $item['quantity']}}" min="1" data-max="{{ $item['qty_available'] }}"
+                            class="w-8 sm:w-10 text-center border py-1 text-xs sm:text-sm">
+                        <button type="button" class="qtybtn px-2 sm:px-3 py-1 text-gray-500 text-sm border quantity-plus mr-2">+</button>
 
-                <form action="{{ route('front.carts.destroy',[$key])}}" id="cart_remove_form" method="post">
-                    @method('DELETE')
-                    @csrf
-                    <button type="submit" class="text-red-500 hover:text-red-700">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </form>
-                
-            </div>
-        </div>
-        @endforeach
+                        <form action="{{ route('front.carts.destroy',[$key])}}" id="cart_remove_form" method="post">
+                            @method('DELETE')
+                            @csrf
+                            <button type="submit" class="text-red-500 hover:text-red-700">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                        
+                    </div>
+                </div>
+            @endforeach
 
         @else
         <!-- Empty Cart Message (Hidden by default) -->

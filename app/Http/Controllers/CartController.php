@@ -65,89 +65,173 @@ class CartController extends Controller
         return view('carts.index', compact('cart','grouped','products'));
     }
     
-    
-    
-    public function store(Request $request){
-     
-        $data=$request->validate([
-            'product_id' => 'required|numeric',
+
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'product_id'   => 'required|numeric',
             'variation_id' => 'required|numeric',
         ]);
-      
-        $url='';
-        if($request->button && $request->button=='buy'){
-            $url=route('front.checkouts.index');
-        }
-        $product_id=$request->product_id;
-        $variation_id=$request->variation_id;
-        $quantity= $request->quantity;
 
-
-        $product = Product::findOrFail($product_id);
-        $variation=Variation::find($variation_id);
-        
-        $price=$product->sell_price;
-        $p_price=getProductDiscount($product);
-        $discount_price=$p_price['discount_price'];
-        
-        $discount=$p_price['discount'];
-        
-  
-        $cart = session()->get('cart', []);
-        
-        $stock=$this->productUtil->checkProductStock($product_id, $variation_id,2);
-        
-        $is_stock=$product->stock_manage;
-        
-        if($is_stock == 1 && $stock <$quantity){
-            return response()->json(['success'=>false,'msg'=>' Stock Not Available!']);
+        $url = '';
+        if ($request->button && $request->button == 'buy') {
+            $url = route('front.checkouts.index');
         }
-                
-  
-        if(isset($cart[$variation_id])) {
-          
-            $old_stock=$cart[$variation_id]['quantity'];
-            $new_stock=$old_stock+1;            
-            if($quantity>1){
-                $new_stock=$quantity;
+
+        $product_id   = $request->product_id;
+        $variation_id = $request->variation_id;
+        $quantity     = max(1, (int) $request->quantity); // নিশ্চিত হওয়া যাতে সর্বনিম্ন ১ থাকে
+
+        $product   = Product::findOrFail($product_id);
+        $variation = Variation::find($variation_id);
+
+        $price          = $product->sell_price;
+        $p_price        = getProductDiscount($product);
+        $discount_price = $p_price['discount_price'];
+        $discount       = $p_price['discount'];
+
+        $cart     = session()->get('cart', []);
+        $stock    = $this->productUtil->checkProductStock($product_id, $variation_id, 2);
+        $is_stock = $product->stock_manage;
+
+        if ($is_stock == 1 && $stock < $quantity) {
+            return response()->json(['success' => false, 'msg' => 'Stock Not Available!']);
+        }
+
+        // কার্টে যদি প্রোডাক্টটি অলরেডি থাকে
+        if (isset($cart[$variation_id])) {
+
+            // FIX: ইনপুট ফিল্ড থেকে আসা quantity সরাসরি সেট হবে ($quantity > 1 কন্ডিশনের প্রয়োজন নেই)
+            $new_stock = $quantity;
+
+            if ($is_stock == 1 && $stock < $new_stock) {
+                return response()->json(['success' => false, 'msg' => 'Stock Not Available!']);
             }
-            
-            if($is_stock == 1 && $stock <$new_stock){
-                return response()->json(['success'=>false,'msg'=>' Stock Note Available!']);
-            }
-        
-            $cart[$variation_id]['quantity']=$new_stock;
-            $cart[$variation_id]['variation_id']=$variation_id;
-            $cart[$variation_id]['price']=$price - $discount_price;
-            $cart[$variation_id]['old_price']=$price;
-            $cart[$variation_id]['discount']=$discount_price;
-            $cart[$variation_id]["discount_id"]= $discount->id ??null;
-            $cart[$variation_id]['qty_available']=$product->stocks->sum('qty_available');
+
+            $cart[$variation_id]['quantity']      = $new_stock;
+            $cart[$variation_id]['variation_id']  = $variation_id;
+            $cart[$variation_id]['price']         = $price - $discount_price;
+            $cart[$variation_id]['old_price']     = $price;
+            $cart[$variation_id]['discount']      = $discount_price;
+            $cart[$variation_id]["discount_id"]   = $discount->id ?? null;
+            $cart[$variation_id]['qty_available'] = $product->stocks->sum('qty_available');
         } else {
-            
+            // নতুন প্রোডাক্ট কার্টে যোগ হলে
             $cart[$variation_id] = [
-                "name" => $product->name,
-                "variation_name" => $variation->name,
-                "quantity" => $quantity,
-                "qty_available" => $product->stocks->sum('qty_available'),
-                "price" => $price - $discount_price,
-                "discount" => $discount_price,
-                "discount_id" => $discount->id ??null,
-                "old_price" => $price,
-                "variation_id" => $variation_id,
-                "product_id" => $product_id,
-                "image" => $product->image_url,
-                "stock_manage" => $product->stock_manage,
-                "user_id" => $product->user_id,
+                "name"             => $product->name,
+                "variation_name"   => $variation->name,
+                "quantity"         => $quantity,
+                "qty_available"    => $product->stocks->sum('qty_available'),
+                "price"            => $price - $discount_price,
+                "discount"         => $discount_price,
+                "discount_id"       => $discount->id ?? null,
+                "old_price"        => $price,
+                "variation_id"     => $variation_id,
+                "product_id"       => $product_id,
+                "image"            => $product->image_url,
+                "stock_manage"     => $product->stock_manage,
+                "user_id"          => $product->user_id,
                 "is_free_shipping" => $product->is_free_shipping
             ];
         }
-        session()->put('cart', $cart);
-        $view=view('carts.cart_section')->render();
-        $total_item=getTotalCart();
-        return response()->json(['url'=>$url,'html'=>$view,'success'=>true,'msg'=>'Product added to cart successfully!','item'=>$total_item]);
 
+        session()->put('cart', $cart);
+
+        $view       = view('carts.cart_section')->render();
+        $total_item = getTotalCart();
+
+        return response()->json([
+            'url'     => $url,
+            'html'    => $view,
+            'success' => true,
+            'msg'     => 'Product added to cart successfully!',
+            'item'    => $total_item
+        ]);
     }
+    /*
+        public function store(Request $request){
+        
+            $data=$request->validate([
+                'product_id' => 'required|numeric',
+                'variation_id' => 'required|numeric',
+            ]);
+        
+            $url='';
+            if($request->button && $request->button=='buy'){
+                $url=route('front.checkouts.index');
+            }
+            $product_id=$request->product_id;
+            $variation_id=$request->variation_id;
+            $quantity= $request->quantity;
+
+
+            $product = Product::findOrFail($product_id);
+            $variation=Variation::find($variation_id);
+            
+            $price=$product->sell_price;
+            $p_price=getProductDiscount($product);
+            $discount_price=$p_price['discount_price'];
+            
+            $discount=$p_price['discount'];
+            
+    
+            $cart = session()->get('cart', []);
+            
+            $stock=$this->productUtil->checkProductStock($product_id, $variation_id,2);
+            
+            $is_stock=$product->stock_manage;
+            
+            if($is_stock == 1 && $stock <$quantity){
+                return response()->json(['success'=>false,'msg'=>' Stock Not Available!']);
+            }
+                    
+    
+            if(isset($cart[$variation_id])) {
+            
+                $old_stock=$cart[$variation_id]['quantity'];
+                $new_stock=$old_stock+1;            
+                if($quantity>1){
+                    $new_stock=$quantity;
+                }
+                
+                if($is_stock == 1 && $stock <$new_stock){
+                    return response()->json(['success'=>false,'msg'=>' Stock Note Available!']);
+                }
+            
+                $cart[$variation_id]['quantity']=$new_stock;
+                $cart[$variation_id]['variation_id']=$variation_id;
+                $cart[$variation_id]['price']=$price - $discount_price;
+                $cart[$variation_id]['old_price']=$price;
+                $cart[$variation_id]['discount']=$discount_price;
+                $cart[$variation_id]["discount_id"]= $discount->id ??null;
+                $cart[$variation_id]['qty_available']=$product->stocks->sum('qty_available');
+            } else {
+                
+                $cart[$variation_id] = [
+                    "name" => $product->name,
+                    "variation_name" => $variation->name,
+                    "quantity" => $quantity,
+                    "qty_available" => $product->stocks->sum('qty_available'),
+                    "price" => $price - $discount_price,
+                    "discount" => $discount_price,
+                    "discount_id" => $discount->id ??null,
+                    "old_price" => $price,
+                    "variation_id" => $variation_id,
+                    "product_id" => $product_id,
+                    "image" => $product->image_url,
+                    "stock_manage" => $product->stock_manage,
+                    "user_id" => $product->user_id,
+                    "is_free_shipping" => $product->is_free_shipping
+                ];
+            }
+            session()->put('cart', $cart);
+            $view=view('carts.cart_section')->render();
+            $total_item=getTotalCart();
+            return response()->json(['url'=>$url,'html'=>$view,'success'=>true,'msg'=>'Product added to cart successfully!','item'=>$total_item]);
+
+        }
+    */
+
 
     public function edit(Request $request,$id)
     {
