@@ -178,40 +178,100 @@
                     @endforeach
                 @endif
 
-                
+                {{--
                 <form action="{{ route('front.carts.store')}}" method="post" id="cart_form">
-                @csrf
-                    
-                
-                <div class="mb-6">
-                    <div class="text-sm text-gray-600 mb-1">{{ __('messages.quantity') }}</div>
-                    <div class="flex items-center">
-                        <button  class="border border-gray-300 px-3 py-1 rounded-l">-</button>
-                        <input type="text" value="1" name="quantity" class="border-t border-b border-gray-300 w-12 py-1 text-center">
-                        <button class="border border-gray-300 px-3 py-1 rounded-r">+</button>
+                    @csrf
+                    <div class="mb-6">
+                        <div class="text-sm text-gray-600 mb-1">{{ __('messages.quantity') }}</div>
+                        <div class="flex items-center">
+                            <button  class="border border-gray-300 px-3 py-1 rounded-l">-</button>
+                            <input type="text" value="1" name="quantity" class="border-t border-b border-gray-300 w-12 py-1 text-center">
+                            <button class="border border-gray-300 px-3 py-1 rounded-r">+</button>
+                        </div>
+
+                        <input type="hidden" name="product_id" value="{{ $product->id}}">
+                        @if($product->type=='single')
+                            <input type="hidden" name="variation_id" id="variation_id" value="{{ $product->variation->id}}">
+                        @else
+                            <input type="hidden" name="variation_id" id="variation_id" value="">
+                        @endif
+                        
                     </div>
 
-                    <input type="hidden" name="product_id" value="{{ $product->id}}">
-                    @if($product->type=='single')
-                        <input type="hidden" name="variation_id" id="variation_id" value="{{ $product->variation->id}}">
-                    @else
-                        <input type="hidden" name="variation_id" id="variation_id" value="">
-                    @endif
+                    <div class="flex space-x-3 mb-6">
+                        <button name="action" value="cart" type="submit" class="flex-1 addtocart">
+                            <div class="bg-white border border-gray-300 text-gray-800 px-4 py-3 rounded-md text-center">
+                                {{ __('messages.add_to_cart') }}
+                            </div>
+                        </button>
+                        <button name="action" value="buy" type="submit" class="flex-1 addtocart">
+                            <div class="bg-blue-500 text-white px-4 py-3 rounded-md text-center">
+                                {{ __('messages.buy_now') }}
+                            </div>
+                        </button>
+                    </div>
+                </form>
+                --}}
+                @php
+                    // ১. সেশন থেকে কার্ট ডেটা নেওয়া
+                    $cart = session()->get('cart', []);
                     
-                </div>
+                    // ২. কারেন্ট প্রোডাক্টের Varation ID বের করা
+                    $currentVariationId = ($product->type == 'single') ? optional($product->variation)->id : null;
+                    
+                    // ৩. সেশন কার্টে এই প্রোডাক্ট/ভ্যারিয়েশন আছে কি না চেক করা
+                    $existingQty = 1; // Default Quantity
+                    
+                    if (!empty($cart)) {
+                        foreach ($cart as $item) {
+                            // Variable product বা Single product এর সাথে Match করা
+                            if (isset($item['variation_id']) && $item['variation_id'] == $currentVariationId) {
+                                $existingQty = $item['quantity'];
+                                break;
+                            } elseif (isset($item['product_id']) && $item['product_id'] == $product->id && $product->type == 'single') {
+                                $existingQty = $item['quantity'];
+                                break;
+                            }
+                        }
+                    }
+                @endphp
 
-                <div class="flex space-x-3 mb-6">
-                    <button name="action" value="cart" type="submit" class="flex-1 addtocart">
-                        <div class="bg-white border border-gray-300 text-gray-800 px-4 py-3 rounded-md text-center">
-                            {{ __('messages.add_to_cart') }}
+                <form action="{{ route('front.carts.store')}}" method="post" id="cart_form">
+                    @csrf
+                    
+                    <div class="mb-6">
+                        <div class="text-sm text-gray-600 mb-1">{{ __('messages.quantity') }}</div>
+                        <div class="flex items-center">
+                            <button type="button" id="qty_decrement" class="border border-gray-300 px-3 py-1 rounded-l text-gray-700 hover:bg-gray-100">-</button>
+                            
+                            <!-- dynamic value set (Page reload হলেও কার্টের Quantity ইম্পোর্ট হবে) -->
+                            <input type="text" id="product_quantity" value="{{ $existingQty }}" name="quantity" min="1" class="border-t border-b border-gray-300 w-12 py-1 text-center text-gray-800">
+                            
+                            <button type="button" id="qty_increment" class="border border-gray-300 px-3 py-1 rounded-r text-gray-700 hover:bg-gray-100">+</button>
                         </div>
-                    </button>
-                    <button name="action" value="buy" type="submit" class="flex-1 addtocart">
-                        <div class="bg-blue-500 text-white px-4 py-3 rounded-md text-center">
-                            {{ __('messages.buy_now') }}
-                        </div>
-                    </button>
-                </div>
+
+                        <input type="hidden" name="product_id" id="product_id" value="{{ $product->id }}">
+                        <input type="hidden" name="variation_id" id="variation_id" value="{{ $currentVariationId }}">
+                    </div>
+
+                    <div class="flex space-x-3 mb-6">
+                        <button name="action" value="cart" type="submit" class="flex-1 addtocart">
+                            @if ($existingQty > 1)
+                                <div class="bg-white border border-gray-300 text-gray-800 px-4 py-3 rounded-md text-center">
+                                    {{ __('messages.updated_to_cart') }}
+                                </div>
+                                @else
+                                <div class="bg-white border border-gray-300 text-gray-800 px-4 py-3 rounded-md text-center">
+                                    {{ __('messages.add_to_cart') }}
+                                </div>
+                            @endif
+                        </button>
+                        <button name="action" value="buy" type="submit" class="flex-1 addtocart">
+                            <div class="bg-blue-500 text-white px-4 py-3 rounded-md text-center">
+                                {{ __('messages.buy_now') }}
+                            </div>
+                        </button>
+                    </div>
                 </form>
 
                 @if($product->user)
@@ -223,10 +283,14 @@
                 <div class="border border-gray-200 rounded-md p-4 mb-4">
                     <div class="flex justify-between items-center mb-2">
                         <div class="text-sm font-medium">{{ __('messages.sold_by') }}</div>
-                        <a href="{{ route('front.shop', $add->slug) }}" class="text-blue-600 text-sm flex items-center">
-                            {{$add->shop_name?? $add->name}}
-                            <i class="fas fa-chevron-right ml-1 text-xs"></i>
-                        </a>
+                        @if ($add->slug)
+                            <a href="{{ route('front.shop', $add->slug) }}" class="text-blue-600 text-sm flex items-center">
+                                {{$add->shop_name?? $add->name}}
+                                <i class="fas fa-chevron-right ml-1 text-xs"></i>
+                            </a>
+                            @else
+                            <label for="">< {{ $add->shop_name ? $add->name : 'N/A'}}/label>
+                        @endif
                     </div>
 
                     <!-- Ship to -->
@@ -563,6 +627,60 @@
 @push('js')
 <script src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
 <script>
+        $(document).ready(function() {
+            // -----------------------------------------------------------
+            // A. Single Product Page-এর নিজের + এবং - বাটন লজিক
+            // -----------------------------------------------------------
+            $('#qty_increment').on('click', function(e) {
+                e.preventDefault();
+                let qtyInput = $('#product_quantity');
+                qtyInput.val((parseInt(qtyInput.val()) || 1) + 1);
+            });
+
+            $('#qty_decrement').on('click', function(e) {
+                e.preventDefault();
+                let qtyInput = $('#product_quantity');
+                let currentVal = parseInt(qtyInput.val()) || 1;
+                if (currentVal > 1) {
+                    qtyInput.val(currentVal - 1);
+                }
+            });
+
+            $('#product_quantity').on('change blur', function() {
+                let val = parseInt($(this).val());
+                if (isNaN(val) || val < 1) $(this).val(1);
+            });
+
+            // -----------------------------------------------------------
+            // B. Real-time Event Listener (পপআপ কার্ট চেঞ্জ হলে এটি রান হবে)
+            // -----------------------------------------------------------
+            $(document).on('cartUpdated', function(event, cartData) {
+                let currentProductId = $('#product_id').val();
+                let currentVariationId = $('#variation_id').val();
+                
+                let foundInCart = false;
+
+                // পপআপের আপডেটেড কার্ট ডাটা থেকে বর্তমান প্রোডাক্টটি খোঁজা
+                if (cartData) {
+                    $.each(cartData, function(key, item) {
+                        // ভ্যারিয়েশন বা প্রোডাক্ট আইডি ম্যাচিং
+                        if ((currentVariationId && item.variation_id == currentVariationId) || 
+                            (item.product_id == currentProductId)) {
+                            
+                            // ম্যাচ করলে সিঙ্গেল পেজের ইনপুট ফিল্ডের ভ্যালু আপডেট
+                            $('#product_quantity').val(item.quantity);
+                            foundInCart = true;
+                            return false; // Break loop
+                        }
+                    });
+                }
+
+                // যদি পপআপ কার্ট থেকে প্রোডাক্টটি Delete করে দেওয়া হয়, তবে Quantity ১ করে দেওয়া
+                if (!foundInCart) {
+                    $('#product_quantity').val(1);
+                }
+            });
+        });
 
     $(document).ready(function(){
 
