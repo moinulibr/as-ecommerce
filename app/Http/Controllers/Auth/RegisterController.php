@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Contact;
+use App\Utils\UserType;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -63,8 +64,8 @@ class RegisterController extends Controller
                 'email'=>$request->email,
                 'mobile'=>$request->mobile,
                 'type'=>'customer',
-                'add_from'=>1,
-            ]);
+                'add_from'=> UserType::CUSTOMER_ADDED_FROM_ECOMMERCE, // add_from 1 is for direct customer registration
+        ]);
         $user = User::create([
             'name'     => $request->name,
             'email'    => $request->email,
