@@ -8,8 +8,10 @@ use Illuminate\Support\Facades\Auth;
 use Session;
 use App\Models\User;
 use App\Models\VendorAddress;
+use App\Utils\UserType;
 use Hash;
 use DB;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -25,8 +27,6 @@ class AuthController extends Controller
             session(['url.intended' => $request->redirect]);
         }
         
-        
-        
         return view('auth.login');
     }
     
@@ -39,7 +39,6 @@ class AuthController extends Controller
             'mobile'    => 'required|unique:users,mobile|regex:/^(?:\+88|88)?(01[3-9]\d{8})$/',
             'password' => 'required|min:6|confirmed',
             'password_confirmation' => 'required',
-
     
             // vendor address table fields
             'shop_name'     => 'required|string|max:255',
@@ -63,6 +62,8 @@ class AuthController extends Controller
                 'password'  => Hash::make($request->password),
                 // 'is_seller' => 1,
                 // 'status'    => 1,
+                'user_type' => UserType::VENDOR,
+                'access_type' => UserType::EXTERNAL_ACCESS_TYPE,
             ]);
             
             DB::table('model_has_roles')->insert([
@@ -72,7 +73,7 @@ class AuthController extends Controller
             ]);
     
             // Generate slug from shop_name
-            $slug = Str::slug($request->shop_name);
+            $slug = Str::slug($request->shop_name).'-'.Str::random(5);
     
             // Ensure slug is unique in VendorAddress table
             $count = VendorAddress::where('slug', 'LIKE', "{$slug}%")->count();

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Laravel\Socialite\Facades\Socialite;
 use App\Models\User;
 use App\Models\Contact;
+use App\Utils\UserType;
 use Illuminate\Support\Facades\Auth;
 
 class SocialitLogineController extends Controller
@@ -35,8 +36,8 @@ class SocialitLogineController extends Controller
                 [
                     'name'=>$googleUser->getName(),
                     'type'=>'customer',
-                    'add_from'=>2,
-                ]);
+                    'add_from'=>UserType::CUSTOMER_ADDED_FROM_ECOMMERCE_SOCIALITE, //add_from 2 is for socialite registration
+            ]);
             
             
         $user = User::firstOrCreate(
