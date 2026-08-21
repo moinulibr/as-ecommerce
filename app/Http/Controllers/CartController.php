@@ -299,46 +299,43 @@ class CartController extends Controller
         }
     }
   
-  public function clearAll(Request $request){
-    
-    if(isset($request->id)){
-        
-        $id=$request->id;
-        $cart = session()->get('cart');
-        if(isset($cart[$id])) {
-            unset($cart[$id]);
-            session()->put('cart', $cart);
+    public function clearAll(Request $request)
+    {  
+        if(isset($request->id)){
+            
+            $id=$request->id;
+            $cart = session()->get('cart');
+            if(isset($cart[$id])) {
+                unset($cart[$id]);
+                session()->put('cart', $cart);
+            }
+            
+        }else{
+            
+            session()->put('cart', []);
+            session()->put('coupon_discount', []);
+
+            session()->put('discount_type', null);
+            session()->put('coupon_id', null);
         }
         
-    }else{
+        $total_item=getTotalCart();
+        $view=view('carts.cart_section')->render();
         
-        session()->put('cart', []);
-        session()->put('coupon_discount', []);
-        
-        
-        
+        $url='';
+        if(isset($request->url)){
+            $url=route('front.carts.index');
+        }elseif($total_item ==0){
+            $url=route('front.home');
+        }
+        return response()->json([
+            'success'=>true,
+            'url'=>$url,
+            'msg'=>'Product removed successfully !',
+            'html'=>$view,
+            'item'=>$total_item
+            ]);
     }
-    
-    $total_item=getTotalCart();
-    $view=view('carts.cart_section')->render();
-    
-    $url='';
-    if(isset($request->url)){
-        $url=route('front.carts.index');
-    }elseif($total_item ==0){
-        $url=route('front.home');
-    }
-    return response()->json([
-          'success'=>true,
-          'url'=>$url,
-          'msg'=>'Product removed successfully !',
-          'html'=>$view,
-          'item'=>$total_item
-        ]);
-        
-    
-
-  }
 
 
 }

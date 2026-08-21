@@ -48,20 +48,23 @@ class CheckoutController extends Controller
             session()->put('coupon_id', null);
         }
 
-        $user_id = Auth::id();
+        //$user_id = Auth::id();
+        //$address = UserAddress::whereUserId($user_id)->get();
+
         $charges = Charge::whereStatus(1)->whereIsNew(0)->get();
-        $address = UserAddress::whereUserId($user_id)->get();
         $delivery_id = session()->get('delivery_id') ?? 3;
+        $delChange = Charge::whereStatus(1)->whereIsNew(0)->where('id', $delivery_id)->first();
+        $selectedDeliveryAmount = $delChange ? $delChange->amount : 0;
         $shipping_id = session()->get('shipping_id');
         $cdiscount = getCouponDiscount();
 
-        // AJAX রিকোয়েস্টে সরাসরি ভিউ রেন্ডার রিটার্ন করবে (Raw string/JSON ছাড়াই)
+        // AJAX request (Raw string/JSON)
         if ($request->ajax()) {
-            return view('checkouts.data', compact('cart', 'charges', 'address', 'cdiscount', 'shipping_id', 'delivery_id'));
+            return view('checkouts.data', compact('cart', 'charges', 'cdiscount', 'shipping_id', 'delivery_id', 'selectedDeliveryAmount')); //address
         }
 
-        // পেজ লোডে প্রথমবার সরাসরি ডাটা পাঠাবে
-        return view('checkouts.index', compact('cart', 'charges', 'address', 'cdiscount', 'shipping_id', 'delivery_id'));
+        //redirect to index blade file, without ajax call
+        return view('checkouts.index', compact('cart', 'charges', 'cdiscount', 'shipping_id', 'delivery_id', 'selectedDeliveryAmount')); //address
     }
 
     public function store(Request $request)
