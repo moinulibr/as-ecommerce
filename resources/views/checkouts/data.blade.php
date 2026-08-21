@@ -90,7 +90,7 @@
                     ({{totalVendorCart()}} Vendors Product)
                 @endif
             </p>
-            <p class="text-gray-800 font-medium"><span class="charge">{{ priceFormate(0) }}</span></p>
+            <p class="text-gray-800 font-medium"><span class="charge">{{ priceFormate($selectedDeliveryAmount) }}</span></p>
         </div>
 
         @if($cdiscount)
@@ -110,7 +110,7 @@
         <div class="flex justify-between items-center pt-3 border-t border-gray-200">
             <p class="text-gray-900 font-bold text-base">{{ __('messages.total') }}:</p>
             <p class="font-bold text-lg text-gray-900">
-                <span class="total_amount">{{priceFormate(getTotalAmount() - $cdiscount)}}</span>
+                <span class="total_amount">{{priceFormate((getTotalAmount() - $cdiscount) + $selectedDeliveryAmount)}}</span>
             </p>
         </div>
     </div>
@@ -126,6 +126,6 @@
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
 
-        <span id="btn_text">Place Order — <span class="total_amount">{{ priceFormate(getTotalAmount() - $cdiscount) }}</span></span>
+        <span id="btn_text">Place Order — <span class="total_amount">{{ priceFormate((getTotalAmount() - $cdiscount) + $selectedDeliveryAmount) }}</span></span>
     </button>
 </div>
