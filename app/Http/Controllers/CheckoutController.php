@@ -292,12 +292,10 @@ class CheckoutController extends Controller
                 'msg'     => 'অবৈধ বা মেয়াদোত্তীর্ণ কুপন কোড!'
             ]);
         } catch (\Exception $e) {
-            //\Illuminate\Support\Facades\Log::error('Coupon Error: ' . $e->getMessage());
-
             return response()->json([
                 'success' => false,
                 'msg'     => 'কুপন প্রসেস করতে সমস্যা হচ্ছে: ' . $e->getMessage()
-            ], 200); // 200 OK দিয়ে JSON রিটার্ন করছি যেন JS error block এ না যায়
+            ], 200);
         }
     }
 
