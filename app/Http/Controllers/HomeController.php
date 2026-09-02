@@ -428,5 +428,5 @@ public function index(Request $request){
         $brands=Brand::orderBy('name')->where('is_new',0)->get();
         $cats=Category::where('is_new',0)->whereNull('parent_id')->get();
         return view('products.index', compact('cats','brands'));
-    }
+}
 */

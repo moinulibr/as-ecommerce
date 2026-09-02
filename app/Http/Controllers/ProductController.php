@@ -37,7 +37,127 @@ class ProductController extends Controller
     }
 
 
-    public function index(Request $request){
+    public function index(Request $request)
+    {
+        if ($request->ajax()) {
+
+            $q               = $request->input('q');
+            $brand_id        = $request->input('brand_id');
+            $category_id     = $request->input('category_id');
+            $sub_cat_id      = $request->input('sub_category_id');
+            $shorting        = $request->input('shorting');
+            $min_price       = $request->input('min_price');
+            $max_price       = $request->input('max_price');
+
+            // Main Query
+            $query = Product::query()
+                ->select([
+                    'products.id',
+                    'products.name',
+                    'products.type',
+                    'products.slug',
+                    'products.image',
+                    'products.category_id',
+                    'products.stock_manage',
+                    'products.brand_id',
+                    DB::raw('COALESCE(MAX(v.sell_price), 0) as price'),
+                    DB::raw('COALESCE(SUM(DISTINCT ps.qty_available), 0) as qty_available')
+                ])
+                // Standard Left Joins to prevent product data loss
+                ->leftJoin('variations as v', 'v.product_id', '=', 'products.id')
+                ->leftJoin('product_stocks as ps', 'ps.product_id', '=', 'products.id')
+                ->where('products.is_new', 0)
+                ->where('products.status', 1)
+                ->where('products.is_ecom', 1);
+
+            // Sub Category Filter
+            if (!empty($sub_cat_id)) {
+                $subCats = is_array($sub_cat_id) ? $sub_cat_id : [$sub_cat_id];
+                $query->whereIn('products.sub_category_id', $subCats);
+            }
+
+            // Category Filter
+            if (!empty($category_id)) {
+                $cats = is_array($category_id) ? $category_id : [$category_id];
+                $query->whereIn('products.category_id', $cats);
+            }
+
+            // Brand Filter
+            if (!empty($brand_id)) {
+                $query->where('products.brand_id', $brand_id);
+            }
+
+            // Search Filter
+            if (!empty($q)) {
+                $query->where(function ($row) use ($q) {
+                    $row->where('products.name', 'LIKE', '%' . $q . '%')
+                        ->orWhere('products.description', 'LIKE', '%' . $q . '%');
+                });
+            }
+
+            // Grouping by Product Primary Key
+            $query->groupBy(
+                'products.id',
+                'products.name',
+                'products.type',
+                'products.slug',
+                'products.image',
+                'products.category_id',
+                'products.stock_manage',
+                'products.brand_id'
+            );
+
+            // Price Range Filter (HAVING Clause for Aggregate Column)
+            if ($min_price !== null && $min_price !== '') {
+                $query->having(DB::raw('MAX(v.sell_price)'), '>=', $min_price);
+            }
+
+            if ($max_price !== null && $max_price !== '') {
+                $query->having(DB::raw('MAX(v.sell_price)'), '<=', $max_price);
+            }
+
+            // Sorting Logic
+            if (!empty($shorting)) {
+                switch ($shorting) {
+                    case 'asc':
+                        $query->orderBy('products.id', 'asc');
+                        break;
+                    case 'name':
+                        $query->orderBy('products.name', 'asc');
+                        break;
+                    case 'name_desc':
+                        $query->orderBy('products.name', 'desc');
+                        break;
+                    case 'price_low':
+                        $query->orderBy(DB::raw('MAX(v.sell_price)'), 'asc');
+                        break;
+                    case 'price_high':
+                        $query->orderBy(DB::raw('MAX(v.sell_price)'), 'desc');
+                        break;
+                    case 'desc':
+                    default:
+                        $query->orderBy('products.id', 'desc');
+                        break;
+                }
+            } else {
+                $query->orderBy('products.id', 'desc');
+            }
+
+            // Pagination
+            $items = $query->simplePaginate(32);
+
+            return response()->json([
+                'html'    => view('products.index_data', compact('items'))->render(),
+                'hasMore' => $items->hasMorePages()
+            ]);
+        }
+
+        $brands = Brand::orderBy('name')->where('is_new', 0)->get();
+        $cats   = Category::where('is_new', 0)->whereNull('parent_id')->get();
+
+        return view('products.index', compact('cats', 'brands'));
+    }
+    public function indexold(Request $request){
         $shouldLog = 1;//$request->has('debug_mode') && $request->query('debug_mode') == '1';
 
         if ($shouldLog) {
