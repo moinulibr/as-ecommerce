@@ -83,7 +83,7 @@ Route::group(['as'=>'front.'], function() {
         Route::get('/payment-methods','paymentMethods')->name('paymentMethods');
         Route::get('/all-brands','allBrands')->name('allBrands');
         Route::get('/become-seller','becomeSeller')->name('becomeSeller');
-
+        Route::get('/code-test', 'codeTester');
     });
 
     Route::controller(FCN\ProductController::class)->group(function(){
