@@ -38,7 +38,7 @@ class ProductController extends Controller
 
 
     public function index(Request $request){
-        $shouldLog = $request->has('debug_mode') && $request->query('debug_mode') == '1';
+        $shouldLog = 1;//$request->has('debug_mode') && $request->query('debug_mode') == '1';
 
         if ($shouldLog) {
             Log::info('--- LIVE DEBUG: Product Index AJAX Request Started ---', [
