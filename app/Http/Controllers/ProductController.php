@@ -14,7 +14,7 @@ use App\Models\LandingPage;
 use App\Models\DeliveryCharge;
 use App\Models\Variation;
 use App\Models\Department;
-
+use Illuminate\Support\Facades\Log;
 
 class ProductController extends Controller
 {
@@ -38,92 +38,143 @@ class ProductController extends Controller
 
 
     public function index(Request $request){
+        $shouldLog = $request->has('debug_mode') && $request->query('debug_mode') == '1';
+
+        if ($shouldLog) {
+            Log::info('--- LIVE DEBUG: Product Index AJAX Request Started ---', [
+                'url' => $request->fullUrl(),
+                'inputs' => $request->all(),
+                'ip' => $request->ip()
+            ]);
+        }
+
         if ($request->ajax()) {
+            $q = request('q');
+            $brand_id = request('brand_id');
+            $category_id = request('category_id');
+            $sub_cat_id = request('sub_category_id');
+            $shorting = request('shorting');
+            $max_price = request('max_price');
+            $min_price = request('min_price');
 
-            $q=request('q');
-            $brand_id=request('brand_id');
-            $category_id=request('category_id');
+            // Step 1: Base Query initialization
+            if ($shouldLog) Log::info('Step 1: Initializing Base Query');
 
-            $sub_cat_id=request('sub_category_id');
-            $shorting=request('shorting');
-            $max_price=request('max_price');
-            $min_price=request('min_price');
+            $query = Product::with('variation')
+                ->where('products.is_new', 0)
+                ->where('products.status', 1)
+                ->where('products.is_ecom', 1)
+                ->leftJoin('categories as c', 'c.id', 'products.category_id')
+                ->join('variations as v', 'v.product_id', 'products.id')
+                ->leftJoin('product_stocks as ps', 'ps.product_id', 'products.id')
+                ->select(
+                    'products.id',
+                    'products.name',
+                    'products.type',
+                    'products.slug',
+                    'products.image',
+                    'products.category_id',
+                    'stock_manage',
+                    'products.brand_id',
+                    DB::raw('max(v.sell_price) as price'),
+                    DB::raw('SUM(ps.qty_available) as qty_available')
+                )
+                ->groupBy('products.id');
 
-            $query=Product::with('variation')
-                        ->where('products.is_new',0)
-                        ->where('products.status',1)
-                        ->where('products.is_ecom',1)
-                        ->Leftjoin('categories as c','c.id','products.category_id')
-                        ->join('variations as v','v.product_id','products.id')
-                        ->leftJoin('product_stocks as ps', 'ps.product_id', 'products.id')
-                        ->select('products.id','products.name','products.type','products.slug','products.image','products.category_id','stock_manage','products.brand_id',
-                        DB::raw('max(v.sell_price) as price'),
-                        DB::raw('SUM(ps.qty_available) as qty_available'))
-                        ->groupBy('products.id'); 
-            if(!empty($sub_cat_id)){
-                $query->whereIn('products.sub_category_id',$sub_cat_id);
-            } 
+            // Step 2: Sub Category Filter
+            if (!empty($sub_cat_id)) {
+                if ($shouldLog) Log::info('Step 2: Applying sub_category_id filter', ['sub_category_id' => $sub_cat_id]);
+                $query->whereIn('products.sub_category_id', $sub_cat_id);
+            }
 
-            if(!empty($category_id)){
-                $query->whereIn('products.category_id',$category_id);
-            } 
+            // Step 3: Category Filter
+            if (!empty($category_id)) {
+                if ($shouldLog) Log::info('Step 3: Applying category_id filter', ['category_id' => $category_id]);
+                $query->whereIn('products.category_id', $category_id);
+            }
 
-            if(!empty($brand_id)){
-                $query->where('products.brand_id',$brand_id);
-            } 
+            // Step 4: Brand Filter
+            if (!empty($brand_id)) {
+                if ($shouldLog) Log::info('Step 4: Applying brand_id filter', ['brand_id' => $brand_id]);
+                $query->where('products.brand_id', $brand_id);
+            }
 
-     
+            // Step 5: Price Range Filter
             if ($request->filled('min_price') && $request->filled('max_price')) {
+                if ($shouldLog) Log::info('Step 5: Applying price range havingBetween filter', ['min' => $min_price, 'max' => $max_price]);
                 $query->havingBetween(DB::raw('MAX(v.sell_price)'), [
                     $request->min_price,
                     $request->max_price
                 ]);
             }
-            // if(!empty($max_price) && !empty($min_price)){
-            //     $query->whereBetween('products.sell_price', [$min_price, $max_price]);
-            // } 
 
-            
-            if(!empty($q)){
-                $query->where(function($row) use ($q){
-                    $row->where('products.name','Like','%'.$q.'%');
-                    $row->orwhere('products.description','Like','%'.$q.'%');
+            // Step 6: Search Query Filter
+            if (!empty($q)) {
+                if ($shouldLog) Log::info('Step 6: Applying search keyword filter', ['search_query' => $q]);
+                $query->where(function ($row) use ($q) {
+                    $row->where('products.name', 'Like', '%' . $q . '%');
+                    $row->orWhere('products.description', 'Like', '%' . $q . '%');
                 });
             }
 
-            if(!empty($shorting)){
+            // Step 7: Sorting
+            if (!empty($shorting)) {
+                if ($shouldLog) Log::info('Step 7: Applying sorting type', ['shorting_type' => $shorting]);
 
-                if ($shorting=='desc') {
+                if ($shorting == 'desc') {
                     $query->orderBy('products.id', 'desc');
-                }else if ($shorting=='asc') {
+                } else if ($shorting == 'asc') {
                     $query->orderBy('products.id', 'asc');
-                }else if ($shorting=='name') {
+                } else if ($shorting == 'name') {
                     $query->orderBy('products.name', 'asc');
-                }else if ($shorting=='name_desc') {
+                } else if ($shorting == 'name_desc') {
                     $query->orderBy('products.name', 'desc');
-                }else if ($shorting=='price_low') {
+                } else if ($shorting == 'price_low') {
                     $query->orderBy('v.sell_price', 'asc');
-                }else if ($shorting=='price_high') {
+                } else if ($shorting == 'price_high') {
                     $query->orderBy('v.sell_price', 'desc');
                 }
-                
-            } 
+            }
 
-            $items=$query->groupBy('products.id','products.name','products.type','products.slug','products.image','products.category_id')
-                    ->where('products.status', 1)
-                    ->simplePaginate(32);
-            
+            // Step 8: Final Compiled SQL before Execution
+            if ($shouldLog) {
+                Log::info('Step 8: Final Compiled SQL before Pagination', [
+                    'sql' => $query->toSql(),
+                    'bindings' => $query->getBindings()
+                ]);
+            }
+
+            // এক্সিকিউশন টাইম মাপার জন্য সময় কাউন্ট শুরু
+            $startTime = microtime(true);
+
+            // Step 9: Query Execution & Pagination
+            $items = $query->groupBy('products.id', 'products.name', 'products.type', 'products.slug', 'products.image', 'products.category_id')
+                ->where('products.status', 1)
+                ->simplePaginate(32);
+
+            $executionTime = round((microtime(true) - $startTime) * 1000, 2);
+
+            if ($shouldLog) {
+                Log::info('Step 9: Query executed successfully', [
+                    'total_items_this_page' => $items->count(),
+                    'has_more_pages' => $items->hasMorePages(),
+                    'execution_time_ms' => $executionTime . 'ms'
+                ]);
+            }
+
             return response()->json([
                 'html' => view('products.index_data', compact('items'))->render(),
                 'hasMore' => $items->hasMorePages()
             ]);
-
         }
 
+        // Step 10: Non-AJAX Normal Request
+        if ($shouldLog) Log::info('Step 10: Processing Non-AJAX Page Load');
 
-        $brands=Brand::orderBy('name')->where('is_new',0)->get();
-        $cats=Category::where('is_new',0)->whereNull('parent_id')->get();
-        return view('products.index', compact('cats','brands'));
+        $brands = Brand::orderBy('name')->where('is_new', 0)->get();
+        $cats = Category::where('is_new', 0)->whereNull('parent_id')->get();
+
+        return view('products.index', compact('cats', 'brands'));
     }
     
     
