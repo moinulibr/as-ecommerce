@@ -24,7 +24,6 @@ class HomeController extends Controller
      
     }
 
-
     public function home(){
         $sliders=Slider::where('is_new',0)->whereStatus(1)->latest()->get();
         $brands=Brand::where('is_new',0)->whereisTop(1)->take(12)->get();
@@ -96,7 +95,7 @@ class HomeController extends Controller
 
         return view('home', compact('sliders','brands','products','departments','cats','features','pcats','followedProducts'));
     }
-    
+
     public function allBrands(){
         $brands = Brand::where('is_new', 0)
             //   ->where('is_top', 1)
