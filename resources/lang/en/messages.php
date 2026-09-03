@@ -103,7 +103,7 @@ return [
     'continue_shopping' => 'Continue Shopping',
     'go_to_dashboard' => 'Go to Dashboard',
     'dashboard' => 'Dashboard',
-    'track_delivery_instruction' => 'Your order has been placed successfully',
+    'track_delivery_instruction' => 'Your order has been placed successfully. Our representatives will contact you very soon.',
     'view_order' => 'View Order',
     'manage_account' => 'Manage My Account',
     'my_profile' => 'My Profile',
