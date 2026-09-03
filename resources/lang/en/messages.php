@@ -81,6 +81,7 @@ return [
     'items' => 'Items',
     'vat_included' => 'VAT included, where applicable',
     'delete' => 'Delete',
+    'cart_delete' => 'Delete All Cart Items',
     'you_select' => 'You Select',
     'apply' => 'Apply',
     'cart' => 'Cart',
