@@ -1,6 +1,14 @@
 <div class="bg-gray-50 p-6 rounded-lg border border-gray-100">
-    <h2 class="text-xl font-bold mb-4 text-black">Cart Totals</h2>
     
+    <div class="flex items-center justify-between border-b pb-3 mb-4">
+        <h2 class="text-xl font-bold text-black m-0">Cart Totals</h2>
+        <a href="{{ route('front.clearAll') }}" title="{{ __('messages.cart_delete') }}"
+           class="cart_remove_form text-red-500 flex items-center text-sm sm:text-base hover:text-red-600 transition-colors">
+            <i class="fas fa-trash mr-1 sm:mr-2"></i>
+            {{ __('messages.delete') }}
+        </a>
+    </div>
+
     @foreach($cart as $ikey => $i)
         <div class="border border-gray-200 p-4 rounded-md bg-white {{ count($cart) > 1 && !$loop->last ? 'mb-4' : '' }}">
             <div class="flex flex-col sm:flex-row gap-4">

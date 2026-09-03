@@ -311,10 +311,9 @@ class CartController extends Controller
             }
             
         }else{
-            
             session()->put('cart', []);
             session()->put('coupon_discount', []);
-
+            session()->put('coupon_discount', null);
             session()->put('discount_type', null);
             session()->put('coupon_id', null);
         }
