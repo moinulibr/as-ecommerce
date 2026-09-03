@@ -216,11 +216,11 @@
 
     if (slider && minInput && maxInput) {
         noUiSlider.create(slider, {
-            start: [0, 100000],
+            start: [0, 10000000],
             connect: true,
             range: {
                 'min': 0,
-                'max': 100000
+                'max': 10000000
             },
             step: 100,
             tooltips: [true, true],

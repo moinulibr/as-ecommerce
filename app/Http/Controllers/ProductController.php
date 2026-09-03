@@ -156,7 +156,52 @@ class ProductController extends Controller
         $cats   = Category::where('is_new', 0)->whereNull('parent_id')->get();
 
         return view('products.index', compact('cats', 'brands'));
+        /*
+            if ($request->ajax()) {
+
+                $category_id = request('category_id');
+                $sub_cat_id  = request('sub_category_id');
+                $brand_id    = request('brand_id');
+
+                // DEBUG TEST 2: Checking Request Inputs & Progressive Query Steps
+                $query = DB::table('products')
+                    ->where('category_id', 41)
+                    ->where('status', 1)
+                    ->where('is_ecom', 1)
+                    ->where('is_new', 0);
+
+                $step1_base_count = (clone $query)->count();
+
+                // Join with Variations
+                $query->leftJoin('variations as v', 'v.product_id', '=', 'products.id');
+                $step2_join_variation_count = (clone $query)->count();
+
+                // Group By Check
+                $step3_grouped_data = (clone $query)
+                    ->select('products.id', DB::raw('MAX(v.sell_price) as price'))
+                    ->groupBy('products.id')
+                    ->get();
+
+                return response()->json([
+                    'request_inputs' => [
+                        'category_id_from_request' => $category_id,
+                        'sub_category_id_from_request' => $sub_cat_id,
+                        'brand_id_from_request' => $brand_id,
+                        'min_price' => request('min_price'),
+                        'max_price' => request('max_price'),
+                        'shorting' => request('shorting'),
+                    ],
+                    'debug_steps' => [
+                        'step1_base_count' => $step1_base_count,
+                        'step2_join_variation_count' => $step2_join_variation_count,
+                        'step3_grouped_count' => $step3_grouped_data->count(),
+                        'step3_data' => $step3_grouped_data
+                    ]
+                ]);
+            }
+        */
     }
+
     public function indexold(Request $request){
         $shouldLog = 1;//$request->has('debug_mode') && $request->query('debug_mode') == '1';
 
