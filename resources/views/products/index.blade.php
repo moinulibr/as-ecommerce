@@ -106,7 +106,7 @@
                         </div>
                         <div class="pl-1">
                             <span>{{ __('messages.max') }}</span>
-                            <input type="number" id="maxPrice" value="100000"
+                            <input type="number" id="maxPrice" value="10000000"
                                 class="w-20 p-1 border border-gray-300 rounded ml-2">
                         </div>
                     </div>
