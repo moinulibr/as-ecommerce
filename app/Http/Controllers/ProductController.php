@@ -41,15 +41,15 @@ class ProductController extends Controller
     {
         if ($request->ajax()) {
 
-            $q               = $request->input('q');
-            $brand_id        = $request->input('brand_id');
-            $category_id     = $request->input('category_id');
-            $sub_cat_id      = $request->input('sub_category_id');
-            $shorting        = $request->input('shorting');
-            $min_price       = $request->input('min_price');
-            $max_price       = $request->input('max_price');
+            $q           = $request->input('q');
+            $brand_id    = $request->input('brand_id');
+            $category_id = $request->input('category_id');
+            $sub_cat_id  = $request->input('sub_category_id');
+            $shorting    = $request->input('shorting');
+            $min_price   = $request->input('min_price');
+            $max_price   = $request->input('max_price');
 
-            // Main Query
+            // Base Query Build
             $query = Product::query()
                 ->select([
                     'products.id',
@@ -58,36 +58,34 @@ class ProductController extends Controller
                     'products.slug',
                     'products.image',
                     'products.category_id',
-                    'products.stock_manage',
+                    'products.sub_category_id',
                     'products.brand_id',
+                    'products.stock_manage',
                     DB::raw('COALESCE(MAX(v.sell_price), 0) as price'),
-                    DB::raw('COALESCE(SUM(DISTINCT ps.qty_available), 0) as qty_available')
+                    // Safe subquery for total available stock across locations
+                    DB::raw('(SELECT COALESCE(SUM(qty_available), 0) FROM product_stocks WHERE product_stocks.product_id = products.id) as qty_available')
                 ])
-                // Standard Left Joins to prevent product data loss
                 ->leftJoin('variations as v', 'v.product_id', '=', 'products.id')
-                ->leftJoin('product_stocks as ps', 'ps.product_id', '=', 'products.id')
                 ->where('products.is_new', 0)
                 ->where('products.status', 1)
                 ->where('products.is_ecom', 1);
 
-            // Sub Category Filter
+            // Filter: Sub Category
             if (!empty($sub_cat_id)) {
-                $subCats = is_array($sub_cat_id) ? $sub_cat_id : [$sub_cat_id];
-                $query->whereIn('products.sub_category_id', $subCats);
+                $query->whereIn('products.sub_category_id', (array) $sub_cat_id);
             }
 
-            // Category Filter
+            // Filter: Category
             if (!empty($category_id)) {
-                $cats = is_array($category_id) ? $category_id : [$category_id];
-                $query->whereIn('products.category_id', $cats);
+                $query->whereIn('products.category_id', (array) $category_id);
             }
 
-            // Brand Filter
+            // Filter: Brand
             if (!empty($brand_id)) {
                 $query->where('products.brand_id', $brand_id);
             }
 
-            // Search Filter
+            // Filter: Search Keyword
             if (!empty($q)) {
                 $query->where(function ($row) use ($q) {
                     $row->where('products.name', 'LIKE', '%' . $q . '%')
@@ -95,7 +93,7 @@ class ProductController extends Controller
                 });
             }
 
-            // Grouping by Product Primary Key
+            // Single & Complete Group By Matching SELECT Non-Aggregated Columns
             $query->groupBy(
                 'products.id',
                 'products.name',
@@ -103,17 +101,15 @@ class ProductController extends Controller
                 'products.slug',
                 'products.image',
                 'products.category_id',
-                'products.stock_manage',
-                'products.brand_id'
+                'products.sub_category_id',
+                'products.brand_id',
+                'products.stock_manage'
             );
 
-            // Price Range Filter (HAVING Clause for Aggregate Column)
-            if ($min_price !== null && $min_price !== '') {
-                $query->having(DB::raw('MAX(v.sell_price)'), '>=', $min_price);
-            }
-
-            if ($max_price !== null && $max_price !== '') {
-                $query->having(DB::raw('MAX(v.sell_price)'), '<=', $max_price);
+            // Filter: Price Range (HAVING Clause for Aggregate Column)
+            if ($request->filled('min_price') && $request->filled('max_price')) {
+                $query->having(DB::raw('MAX(v.sell_price)'), '>=', (float) $min_price)
+                    ->having(DB::raw('MAX(v.sell_price)'), '<=', (float) $max_price);
             }
 
             // Sorting Logic
@@ -143,7 +139,7 @@ class ProductController extends Controller
                 $query->orderBy('products.id', 'desc');
             }
 
-            // Pagination
+            // Execute Simple Pagination
             $items = $query->simplePaginate(32);
 
             return response()->json([
@@ -152,10 +148,12 @@ class ProductController extends Controller
             ]);
         }
 
+        // Page Initial Load Data
         $brands = Brand::orderBy('name')->where('is_new', 0)->get();
         $cats   = Category::where('is_new', 0)->whereNull('parent_id')->get();
 
         return view('products.index', compact('cats', 'brands'));
+        
         /*
             if ($request->ajax()) {
 
