@@ -75,9 +75,9 @@
     <!-- Final Total Summary -->
     <div class="space-y-2 pt-4">
         <div class="flex justify-between text-sm">
-            <p class="text-gray-600">{{ __('messages.items_total') }} (<span id="checkoutItemsCount">{{getTotalCart()}}</span> {{ __('messages.items') }})</p>
+            <p class="text-gray-600">{{ __('messages.items_total') }} (<span id="checkoutItemsCount" class="spinner-items-count">{{getTotalCart()}}</span> {{ __('messages.items') }})</p>
             <p class="text-gray-800 font-medium">
-                <span id="checkoutTotalAmount" class="sub_total" data-totalamount="{{getTotalAmount() -$cdiscount}}" data-totalvendor="{{totalVendorCart()}}">
+                <span id="checkoutTotalAmount" class="sub_total checkout-total" data-totalamount="{{getTotalAmount() -$cdiscount}}" data-totalvendor="{{totalVendorCart()}}">
                     {{priceFormate(getTotalAmount())}}
                 </span>
             </p>
@@ -96,21 +96,21 @@
         @if($cdiscount)
         <div class="flex justify-between text-sm text-green-600 font-medium">
             <p>Coupon Discount</p>
-            <p>- {{ priceFormate($cdiscount)}}</p>
+            <p  class="coupon-discount">- {{ priceFormate($cdiscount)}}</p>
         </div>
         @endif
         
         @if(getCartDiscount())
         <div class="flex justify-between text-sm text-green-600 font-medium">
             <p>Discount</p>
-            <p>- {{ priceFormate(getCartDiscount())}}</p>
+            <p class="cart-discount">- {{ priceFormate(getCartDiscount())}}</p>
         </div>
         @endif
     
         <div class="flex justify-between items-center pt-3 border-t border-gray-200">
             <p class="text-gray-900 font-bold text-base">{{ __('messages.total') }}:</p>
             <p class="font-bold text-lg text-gray-900">
-                <span class="total_amount">{{priceFormate((getTotalAmount() - $cdiscount) + $selectedDeliveryAmount)}}</span>
+                <span class="total_amount final-total-amount">{{priceFormate((getTotalAmount() - $cdiscount) + $selectedDeliveryAmount)}}</span>
             </p>
         </div>
     </div>

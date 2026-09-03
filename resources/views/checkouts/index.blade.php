@@ -1,6 +1,44 @@
 @extends('layouts.app')
 @push('css')
   <style>
+        .inline-text-spinner {
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(0, 0, 0, 0.1);
+        border-radius: 50%;
+        border-top-color: #2563eb; 
+        animation: textSpin 0.6s linear infinite;
+        display: inline-block;
+        vertical-align: middle;
+        margin-left: 5px;
+    }
+
+    #btn_text .inline-text-spinner {
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-top-color: #ffffff;
+    }
+
+    @keyframes textSpin {
+        to { transform: rotate(360deg); }
+    }
+
+    .amount-loader-spinner {
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(0, 0, 0, 0.1);
+        border-radius: 50%;
+        border-top-color: #2563eb; /* ব্লু ব্র্যান্ড কালার */
+        animation: amountSpinCircle 0.6s linear infinite;
+        display: inline-block;
+        vertical-align: middle;
+    }
+    .text-green-600 .amount-loader-spinner {
+        border: 2px solid rgba(22, 163, 74, 0.2);
+        border-top-color: #16a34a; 
+    }
+    @keyframes amountSpinCircle {
+        to { transform: rotate(360deg); }
+    }
 </style>  
 @endpush
 @section('content')
@@ -100,6 +138,8 @@ $(document).ready(function() {
             },
             success: function(htmlResponse) {
                 $('#checkout_data').html(htmlResponse);
+
+                resetOrderButton();
             },
             error: function() {
                 showToast('কার্ট আপডেট করতে সমস্যা হয়েছে!', 'error');
@@ -131,6 +171,21 @@ $(document).ready(function() {
         let shipping_id = $("input.shipping_id:checked").val();
         let delivery_id = $("input.delivery_id:checked").val();
 
+        let textSpinnerHtml = '<span class="inline-text-spinner"></span>';
+        let amountSpinner = '<span class="amount-loader-spinner"></span>';
+        
+        $('.spinner-items-count').html(amountSpinner); // Items total count
+        $('.checkout-total').html(amountSpinner);       // Sub total amount
+        $('.coupon-discount').html(amountSpinner);     // Coupon discount amount
+        $('.cart-discount').html(amountSpinner);       // Cart discount amount
+        $('.charge').html(amountSpinner);              // Delivery charge amount
+        $('.final-total-amount').html(amountSpinner);   // Final total amount
+        $('.total_amount').html(amountSpinner);        // Button/Other total targets
+
+        $('#btn_submit_order').attr('disabled', 'disabled');
+        $('#btn_cart_icon').addClass('hidden');
+        $('#btn_spinner').removeClass('hidden');
+
         $.ajax({
             url: "{{ route('front.storeSession') }}",
             type: "POST",
@@ -141,7 +196,11 @@ $(document).ready(function() {
             },
             success: function (response) {
                 reloadCartSummary();
-            }
+            },
+            error: function() {
+            resetOrderButton();
+            showToast('সেশন আপডেট করতে সমস্যা হয়েছে!', 'error');
+        }
         });
     });
 
@@ -200,6 +259,12 @@ function openModal() {
 function closeModal() {
     const modal = document.getElementById('addressModal');
     if(modal) modal.classList.add('hidden');
+}
+
+function resetOrderButton() {
+    $('#btn_submit_order').removeAttr('disabled');
+    $('#btn_cart_icon').removeClass('hidden');
+    $('#btn_spinner').addClass('hidden');
 }
 </script>
 @endpush
