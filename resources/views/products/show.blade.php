@@ -7,7 +7,7 @@
     
     $discount_price=$p_price['discount_price'];
     $discount=$p_price['discount'];
-
+    //\Log::info($product);
 @endphp
 
 <link rel="stylesheet" href="{{ asset('assets/css/pages/product-details.css')}}">

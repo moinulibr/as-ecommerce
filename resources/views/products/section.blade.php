@@ -3,7 +3,7 @@
     $discount_price = $p_price['discount_price'];
     $discount = $p_price['discount'];
 
-    \Log::info($sproduct)
+    //\Log::info($sproduct);
 @endphp
 
 <div class="relative border rounded overflow-hidden">

@@ -93,6 +93,9 @@ class HomeController extends Controller
                 ->get();
         }
 
+        //
+        markCartStatus($products);
+
         return view('home', compact('sliders','brands','products','departments','cats','features','pcats','followedProducts'));
     }
 

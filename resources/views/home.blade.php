@@ -249,6 +249,9 @@
                 </div>
             </div>
 
+            @php
+                //\Log::info($product);
+            @endphp
             
             @if($followedProducts->count())
             <div class="mb-8 md:mb-12">

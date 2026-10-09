@@ -470,7 +470,7 @@ class ProductController extends Controller
         } 
 
         
-        $products=Product::with('variation')
+        $products = Product::with('variation')
                         ->where('products.is_new',0)
                         ->where('products.id','!=',$id)
                         ->where('products.category_id', $product->category_id)
@@ -495,6 +495,10 @@ class ProductController extends Controller
         //        }   
         // }
         // dd($array);   
+        
+        //markCartStatus($products);
+        markCartStatus([$product]);
+
         return view('products.show', compact('product','products'));
     }
   
