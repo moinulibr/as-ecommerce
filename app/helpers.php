@@ -314,3 +314,53 @@ function login_url(){
 }
 
 
+
+if (!function_exists('cartLookup')) {
+    /**
+     * cartLookup function
+     * get products and variations ids from cart session
+     * @return array
+     */
+    function cartLookup(): array
+    {
+        static $cache = null;
+        if ($cache !== null) return $cache;
+
+        $cart = session()->get('cart', []);
+        $vIds = [];
+        $pIds = [];
+
+        foreach ($cart as $vid => $item) {
+            $vIds[(string) $vid] = true;
+            if (!empty($item['product_id'])) {
+                $pIds[(string) $item['product_id']] = true;
+            }
+        }
+        return $cache = ['variations' => $vIds, 'products' => $pIds];
+    }
+}
+
+if (!function_exists('markCartStatus')) {
+    /**
+     * প্রতিটা product-এ $p->is_added_to_cart সেট করে
+     * @param  iterable $products  Collection বা array
+     */
+    function markCartStatus($products): void
+    {
+        $lookup = cartLookup();
+
+        foreach ($products as $p) {
+            $pid = (string) $p->id;
+            $vid = null;
+
+            if ($p->type === 'single' && isset($p->variation)) {
+                $vid = (string) $p->variation->id;
+            } elseif (isset($p->variation_id)) {
+                $vid = (string) $p->variation_id;
+            }
+
+            $p->isAddedToCart = isset($lookup['products'][$pid])
+                || ($vid && isset($lookup['variations'][$vid]));
+        }
+    }
+}

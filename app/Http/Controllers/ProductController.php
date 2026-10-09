@@ -141,6 +141,9 @@ class ProductController extends Controller
 
             // Execute Simple Pagination
             $items = $query->simplePaginate(32);
+            
+            //mart products in cart
+            markCartStatus($items);
 
             return response()->json([
                 'html'    => view('products.index_data', compact('items'))->render(),
@@ -455,8 +458,6 @@ class ProductController extends Controller
                   ->where('slug', $slug)
                   ->firstOrFail();
                   
-    
-        
         if(empty($product)){
             return redirect('/shop');
         }
