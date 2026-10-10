@@ -78,18 +78,6 @@
         <!-- Right Side - Order Summary -->
         <div class="w-full lg:w-1/3">
             <div class="bg-white p-4 rounded-lg shadow-sm border sm:p-6">
-                <!-- Shipping Address -->
-                <!-- <div class="mb-6">
-                    <h3 class="text-base font-medium mb-3 sm:text-lg sm:mb-4">Ship to</h3>
-                    <div class="flex items-start">
-                        <i class="fas fa-map-marker-alt mt-1 mr-2 text-gray-500 text-sm sm:text-base"></i>
-                        <div>
-                            <p class="text-gray-800 text-sm sm:text-base">Dhaka, Tangail-Mohera, Bhatkura, Mirzapur
-                            </p>
-                        </div>
-                        <button class="ml-auto text-blue-500 font-medium text-sm sm:text-base">CHANGE</button>
-                    </div>
-                </div> -->
 
                 <!-- Invoice and Contact -->
                 <div class="">
@@ -103,10 +91,6 @@
                         <span class="text-gray-700 text-sm sm:text-base">{{ __('messages.items_total') }} (<span id="orderItemsCount">{{getTotalCart()}}</span> {{ __('messages.items') }})</span>
                         <span id="orderItemsAmount" class="font-medium text-sm sm:text-base"> {{priceFormate(getTotalAmount())}} </span>
                     </div>
-                    <!--<div class="flex justify-between mb-2 sm:mb-3">-->
-                    <!--    <span class="text-gray-700 text-sm sm:text-base">{{ __('messages.delivery_fee') }}</span>-->
-                    <!--    <span class="font-medium text-sm sm:text-base">Tk 0</span>-->
-                    <!--</div>-->
                 </div>
 
                 <!-- Promotions -->

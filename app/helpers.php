@@ -318,14 +318,20 @@ function login_url(){
 
 if (!function_exists('cartLookup')) {
     /**
-     * cartLookup function
-     * get products and variations ids from cart session
-     * @return array
+     * Session cart থেকে variations এবং products এর ID lookup map বানায়।
+     * Static cache — এক request-এ যতবার কল হোক, session একবারই পড়ে।
+     *
+     * Return: [
+     *    'variations' => ['12' => true, '13' => true, ...],  // cart keys
+     *    'products'   => ['5'  => true, '8'  => true, ...],  // product ids
+     * ]
      */
     function cartLookup(): array
     {
         static $cache = null;
-        if ($cache !== null) return $cache;
+        if ($cache !== null) {
+            return $cache;
+        }
 
         $cart = session()->get('cart', []);
         $vIds = [];
@@ -337,14 +343,18 @@ if (!function_exists('cartLookup')) {
                 $pIds[(string) $item['product_id']] = true;
             }
         }
+
         return $cache = ['variations' => $vIds, 'products' => $pIds];
     }
 }
 
 if (!function_exists('markCartStatus')) {
     /**
-     * প্রতিটা product-এ $p->is_added_to_cart সেট করে
-     * @param  iterable $products  Collection বা array
+     * প্রতিটা product-এ $p->isAddedToCart property সেট করে
+     * (product_id দিয়ে match — zero extra query, zero lazy-load)
+     *
+     * @param  iterable $products  Collection / Paginator / array
+     * @return void
      */
     function markCartStatus($products): void
     {
@@ -352,16 +362,8 @@ if (!function_exists('markCartStatus')) {
 
         foreach ($products as $p) {
             $pid = (string) $p->id;
-            $vid = null;
-
-            if ($p->type === 'single' && isset($p->variation)) {
-                $vid = (string) $p->variation->id;
-            } elseif (isset($p->variation_id)) {
-                $vid = (string) $p->variation_id;
-            }
-
-            $p->isAddedToCart = isset($lookup['products'][$pid])
-                || ($vid && isset($lookup['variations'][$vid]));
+            $p->isAddedToCart = isset($lookup['products'][$pid]);
         }
     }
 }
+
