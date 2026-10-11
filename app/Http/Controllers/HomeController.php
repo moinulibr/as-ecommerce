@@ -136,7 +136,6 @@ class HomeController extends Controller
 
     public function contact(Request $request)
     {
-
         $data = $request->validate([
             'name' => 'required',
             'email' => 'required',
