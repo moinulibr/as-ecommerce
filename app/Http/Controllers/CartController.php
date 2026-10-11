@@ -34,7 +34,6 @@ class CartController extends Controller
         ]);
 
         $url = '';
-        // ✅ FIX: form-এ name="action" — তাই $request->button নয়, $request->action
         if ($request->action && $request->action == 'buy') {
             $url = route('front.checkouts.index');
         }
@@ -46,10 +45,19 @@ class CartController extends Controller
         $product   = Product::findOrFail($product_id);
         $variation = Variation::find($variation_id);
 
-        $price          = $product->sell_price;
+        // ✅ DYNAMIC PRICE:
+        // Variable product → variation-এর sell_price use করো
+        // Single product  → product-এর sell_price use করো
+        $price = $variation->sell_price ?? $product->sell_price;
+
         $p_price        = getProductDiscount($product);
         $discount_price = $p_price['discount_price'];
         $discount       = $p_price['discount'];
+
+        // ✅ Percentage discount হলে variation-এর actual price-এর উপর calculate করো
+        if ($discount && $discount->discount_type == 'percentage') {
+            $discount_price = ($price * $discount->amount) / 100;
+        }
 
         $cart     = session()->get('cart', []);
         $stock    = $this->productUtil->checkProductStock($product_id, $variation_id, 2);
@@ -98,8 +106,7 @@ class CartController extends Controller
         $view       = view('carts.cart_section')->render();
         $total_item = getTotalCart();
 
-        // ✅ cart state for real-time button update
-        cartLookup(); // reset static cache (session just changed)
+        cartLookup();
 
         return response()->json([
             'url'     => $url,
@@ -119,7 +126,6 @@ class CartController extends Controller
         if ($id) {
             $qty = $request->quantity;
 
-            // ✅ Guard: cart null বা empty হলে crash হবে না
             $cart = session()->get('cart', []);
             if (empty($cart) || !isset($cart[$id])) {
                 return response()->json(['success' => false, 'msg' => 'Item not found in cart']);
@@ -171,7 +177,6 @@ class CartController extends Controller
     {
         if ($id) {
 
-            // ✅ Guard
             $cart = session()->get('cart', []);
             if (isset($cart[$id])) {
                 unset($cart[$id]);
@@ -200,7 +205,6 @@ class CartController extends Controller
         if (isset($request->id)) {
 
             $id = $request->id;
-            // ✅ Guard
             $cart = session()->get('cart', []);
             if (isset($cart[$id])) {
                 unset($cart[$id]);

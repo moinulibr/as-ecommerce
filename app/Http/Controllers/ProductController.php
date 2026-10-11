@@ -132,7 +132,6 @@ class ProductController extends Controller
 
             $items = $query->simplePaginate(32);
 
-            // ✅ mark products in cart
             markCartStatus($items);
 
             return response()->json([
@@ -372,7 +371,6 @@ class ProductController extends Controller
                 ->where('products.status', 1)
                 ->paginate(30);
 
-            // ✅ mark products in cart
             markCartStatus($items);
 
             return view('products.index_data', compact('items'))->render();
@@ -432,7 +430,6 @@ class ProductController extends Controller
             ->take(16)
             ->get();
 
-        // ✅ mark both related products AND main product in cart
         markCartStatus($products);
         markCartStatus([$product]);
 
@@ -441,6 +438,7 @@ class ProductController extends Controller
 
     public function relativeProduct($id)
     {
+
         $product = Product::with('sizes', 'sizes.stocks')->find($id);
 
         $products = Product::with('variation')
@@ -452,7 +450,6 @@ class ProductController extends Controller
             ->take(12)
             ->get();
 
-        // ✅ mark products in cart
         markCartStatus($products);
 
         $view = view('frontend.products.partials.relative_product', compact('products'))->render();
@@ -472,7 +469,6 @@ class ProductController extends Controller
             ->take($newarrival_num)
             ->get();
 
-        // ✅ mark products in cart
         markCartStatus($products);
 
         $view = view('frontend.products.partials.trending_product', compact('products'))->render();
@@ -490,7 +486,6 @@ class ProductController extends Controller
             ->where('status', 1)
             ->take($discount_num)->get();
 
-        // ✅ mark products in cart
         markCartStatus($products);
 
         $view = view('frontend.products.partials.hotdeal_product', compact('products'))->render();
@@ -499,6 +494,7 @@ class ProductController extends Controller
 
     public function recommendedProduct()
     {
+
         $info = Information::first();
         $recom_num = $info->recommend_num;
 
@@ -509,7 +505,6 @@ class ProductController extends Controller
             ->take($recom_num)
             ->get();
 
-        // ✅ mark products in cart
         markCartStatus($products);
 
         $view = view('frontend.products.partials.recommended_product', compact('products'))->render();
@@ -518,6 +513,7 @@ class ProductController extends Controller
 
     public function discountProduct(Request $request)
     {
+
         if ($request->ajax()) {
             $items = Product::with('variation')
                 ->whereNotNull('products.discount_type')
@@ -526,7 +522,6 @@ class ProductController extends Controller
                 ->latest()
                 ->paginate(24);
 
-            // ✅ mark products in cart
             markCartStatus($items);
 
             $view = view('frontend.products.partials.discount', compact('items'))->render();
@@ -590,7 +585,6 @@ class ProductController extends Controller
 
         $items =  Product::with('variation')->where('sub_category_id', $scat_id)->where('status', 1)->paginate(30);
 
-        // ✅ mark products in cart
         markCartStatus($items);
 
         $types = Brand::orderBy('name')->get();
@@ -622,7 +616,6 @@ class ProductController extends Controller
             ->latest()
             ->get();
 
-        // ✅ mark products in cart
         markCartStatus($items);
 
         return view('frontend.products.free_shipping_products', compact('items'));
@@ -641,35 +634,114 @@ class ProductController extends Controller
         ]);
     }
 
+    /**
+     * ============================================================
+     * FULLY DYNAMIC VARIATION MATCHER + PRICE RETURNER
+     * ============================================================
+     * Product-এর `variants` JSON structure:
+     *   [ {"Color": ["Red","Black"]}, {"Size": ["S","M"]}, {"Material": ["gold","silver"]} ]
+     *
+     * Variation name DB-তে store হয়: "Red-M-gold" (JSON order অনুযায়ী join)
+     *
+     * Return:
+     *   - variation (model)
+     *   - raw_price (variation-এর sell_price - discount)
+     *   - display_price (formatted "TK X")
+     *   - display_old_price (formatted original price; discount থাকলে)
+     */
     public function getVariation($id)
     {
         $product = Product::find($id);
 
-        $name = '';
+        $variantsJson = $product->variants ?? null;
+        $variants = $variantsJson ? json_decode($variantsJson, true) : [];
 
-        $size = request('size');
-        $color = request('color');
-
-        $vquery = Variation::where('product_id', $id);
-
-        if ($color) {
-            if ($name) {
-                $name .= '-' . $color;
-            } else {
-                $name .= $color;
+        // JSON-এর original order অনুযায়ী attribute names
+        $orderedAttrs = [];
+        foreach ($variants as $group) {
+            if (!is_array($group)) continue;
+            foreach ($group as $attrName => $values) {
+                $orderedAttrs[] = strtolower($attrName);
             }
         }
 
-        if ($size) {
-            if ($name) {
-                $name .= '-' . $size;
-            } else {
-                $name .= $size;
+        // Request থেকে selected value collect
+        $parts = [];
+        foreach ($orderedAttrs as $attrKey) {
+            $val = request($attrKey);
+            if (!empty($val)) $parts[] = $val;
+        }
+
+        $variation        = null;
+        $rawPrice         = null;
+        $displayPrice     = null;
+        $displayOldPrice  = null;
+
+        if (!empty($parts)) {
+            $name = implode('-', $parts);
+            $variation = Variation::where('product_id', $id)
+                ->where('name', $name)
+                ->first();
+
+            if ($variation) {
+                // ✅ DYNAMIC PRICE
+                $price = $variation->sell_price ?? $product->sell_price;
+
+                $p_price        = getProductDiscount($product);
+                $discount_price = $p_price['discount_price'];
+                $discount       = $p_price['discount'];
+
+                if ($discount && $discount->discount_type == 'percentage') {
+                    $discount_price = ($price * $discount->amount) / 100;
+                }
+
+                $rawPrice        = $price - $discount_price;
+                $displayPrice    = priceFormate($rawPrice);
+                $displayOldPrice = $discount_price > 0 ? priceFormate($price) : null;
             }
         }
 
-        $vquery->where('name', $name);
-        $variation = $vquery->first();
+        return response()->json([
+            'variation'         => $variation,
+            'raw_price'         => $rawPrice,
+            'display_price'     => $displayPrice,
+            'display_old_price' => $displayOldPrice,
+        ]);
+    }
+    public function oldgetVariation($id)
+    {
+        $product = Product::find($id);
+
+        $variantsJson = $product->variants ?? null;
+        $variants = $variantsJson ? json_decode($variantsJson, true) : [];
+
+        // JSON order অনুযায়ী attribute names list
+        $orderedAttrs = [];
+        foreach ($variants as $group) {
+            if (!is_array($group)) continue;
+            foreach ($group as $attrName => $values) {
+                $orderedAttrs[] = strtolower($attrName);
+            }
+        }
+
+        // Request থেকে প্রতিটা attribute-এর selected value নাও
+        $parts = [];
+        foreach ($orderedAttrs as $attrKey) {
+            $val = request($attrKey);
+            if (!empty($val)) {
+                $parts[] = $val;
+            }
+        }
+
+        // Name build + DB lookup
+        $variation = null;
+        if (!empty($parts)) {
+            $name = implode('-', $parts);
+            $variation = Variation::where('product_id', $id)
+                ->where('name', $name)
+                ->first();
+        }
+
         return response()->json(['variation' => $variation]);
     }
 
@@ -687,7 +759,6 @@ class ProductController extends Controller
             ->where('status', 1)
             ->get();
 
-        // ✅ mark products in cart
         markCartStatus($products);
 
         $view = view('frontend.products.partials.department_product', compact('products'))->render();

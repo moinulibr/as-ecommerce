@@ -14,7 +14,8 @@
         .colors.active{
             border: 2px solid #3b82f6 !important;
         }
-        .sizes.active {
+        .sizes.active,
+        .variants.active {
             background-color: #d9d9d9 !important;
             border: 2px solid #3b82f6 !important;
         }
@@ -56,7 +57,7 @@
     <!-- Main Content -->
     <main class="container mx-auto px-4 md:px-6 py-4">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Product Images with Slick Slider -->
+            <!-- Product Images -->
             <div class="lg:col-span-2 md:pt-1">
                 <div class="slider-for mb-4" role="region" aria-label="Product image gallery">
                     <div>
@@ -86,7 +87,6 @@
                         </div>
                     </div>
                     @endforeach
-                    
                 </div>
             </div>
 
@@ -115,15 +115,13 @@
                     <div class="flex items-baseline space-x-2">
                 
                         @if($discount_price > 0)
-                            {{-- Discounted Price --}}
                             <span class="text-red-600 text-2xl font-semibold">
                                 <span class="product_price">
                                     {{ priceFormate($product->sell_price - $discount_price) }}
                                 </span>
                             </span>
                 
-                            {{-- Original Price --}}
-                            <span class="text-gray-500 line-through text-2xl">
+                            <span class="text-gray-500 line-through text-2xl product_old_price">
                                 {{ priceFormate($product->sell_price) }}
                             </span>
                           
@@ -134,7 +132,6 @@
                                 </span>
                             @endif
                         @else
-                            {{-- Normal Price --}}
                             <span class="text-red-600 text-2xl font-semibold">
                                 <span class="product_price">
                                     {{ priceFormate($product->sell_price) }}
@@ -145,6 +142,9 @@
                     </div>
                 </div>
 
+                {{-- ============================================================ --}}
+                {{-- VARIANT SELECTOR — FULLY DYNAMIC                                   --}}
+                {{-- ============================================================ --}}
                 @if($product->type=='variable')
                     @php
                     $array=[];
@@ -155,15 +155,28 @@
 
                     @foreach($array as $key => $arrayn)
                     @foreach($arrayn as $vname => $sizes)
-                        <div class="mb-4 <?php echo strtolower($vname); ?>">
-                            <div class="text-sm text-gray-600 mb-1">{{$vname}}</div>
-                            <div class="flex space-x-2">
-                                @foreach($sizes as $key => $color)
-                                @if(strtolower($vname)=='color')
-                                <button class="colors h-8 w-8 border border-gray-400 rounded-full" style="background-color: {{ strtolower($color) }};">{{$color}}</button>
-                                @elseif(strtolower($vname)=='size')
-                                <button class="sizes px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-100 ">{{$color}}</button>
-                                @endif
+                        @php
+                            $attrSlug = strtolower($vname);
+                            // Color-এর নাম যাই হোক (color/colour/colors/colours) — swatch style
+                            $isColor = in_array($attrSlug, ['color', 'colour', 'colors', 'colours']);
+                        @endphp
+                        <div class="mb-4 variant-group" data-attr-group="{{ $attrSlug }}">
+                            <div class="text-sm text-gray-600 mb-1">{{ $vname }}</div>
+                            <div class="flex space-x-2 flex-wrap">
+                                @foreach($sizes as $color)
+                                    @if($isColor)
+                                        <button type="button"
+                                                class="variant-btn colors h-8 w-8 border border-gray-400 rounded-full"
+                                                style="background-color: {{ strtolower($color) }};"
+                                                data-attr="{{ $attrSlug }}"
+                                                data-value="{{ $color }}"
+                                                title="{{ $color }}">{{ $color }}</button>
+                                    @else
+                                        <button type="button"
+                                                class="variant-btn variants px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-100"
+                                                data-attr="{{ $attrSlug }}"
+                                                data-value="{{ $color }}">{{ $color }}</button>
+                                    @endif
                                 @endforeach
                             </div>
                         </div>
@@ -173,14 +186,9 @@
 
                 
                 @php
-                    // ১. সেশন থেকে কার্ট ডেটা নেওয়া
                     $cart = session()->get('cart', []);
-                    
-                    // ২. কারেন্ট প্রোডাক্টের Variation ID বের করা
                     $currentVariationId = ($product->type == 'single') ? optional($product->variation)->id : null;
-                    
-                    // ৩. সেশন কার্টে এই প্রোডাক্ট/ভ্যারিয়েশন আছে কি না চেক করা
-                    $existingQty = 1; // Default Quantity
+                    $existingQty = 1;
                     
                     if (!empty($cart)) {
                         foreach ($cart as $item) {
@@ -194,7 +202,6 @@
                         }
                     }
                     
-                    // ✅ NEW: isAddedToCart flag from controller (markCartStatus([$product]))
                     $inCart = !empty($product->isAddedToCart);
                 @endphp
 
@@ -206,7 +213,6 @@
                         <div class="flex items-center">
                             <button type="button" id="qty_decrement" class="border border-gray-300 px-3 py-1 rounded-l text-gray-700 hover:bg-gray-100">-</button>
                             
-                            <!-- dynamic value set (Page reload হলেও কার্টের Quantity ইম্পোর্ট হবে) -->
                             <input type="text" id="product_quantity" value="{{ $existingQty }}" name="quantity" min="1" class="border-t border-b border-gray-300 w-12 py-1 text-center text-gray-800">
                             
                             <button type="button" id="qty_increment" class="border border-gray-300 px-3 py-1 rounded-r text-gray-700 hover:bg-gray-100">+</button>
@@ -217,7 +223,6 @@
                     </div>
 
                     <div class="flex space-x-3 mb-6">
-                        {{-- ✅ Cart button: single-এ $inCart দিয়ে, variable-এ JS dynamic handle করবে --}}
                         <button name="action" value="cart" type="submit"
                                 class="flex-1 addtocart product-cart-btn"
                                 data-product-id="{{ $product->id }}"
@@ -245,7 +250,6 @@
                 @php
                     $add=$product->user->vendorAddress;
                 @endphp
-                <!-- Sold by -->
                 <div class="border border-gray-200 rounded-md p-4 mb-4">
                     <div class="flex justify-between items-center mb-2">
                         <div class="text-sm font-medium">{{ __('messages.sold_by') }}</div>
@@ -259,7 +263,6 @@
                         @endif
                     </div>
 
-                    <!-- Ship to -->
                     <div class="mb-4">
                         <div class="text-sm font-medium mb-2">{{ __('messages.ship_to') }}</div>
                         <div class="flex items-start">
@@ -270,10 +273,7 @@
                         </div>
                     </div>
 
-                    <!-- Standard Delivery -->
-                    
                     @if($product->estimate_delivery_day)
-                    
                     <div class="mb-4">
                         <div class="text-sm font-medium mb-2">{{ __('messages.standard_delivery') }}</div>
                         <div class="flex items-start">
@@ -284,8 +284,6 @@
                     </div>
                     @endif
 
-                    <!-- Return & Warranty -->
-                    
                     @if($product->warranty_available || $product->return_available)
                     <div>
                         <div class="text-sm font-medium mb-2">{{ __('messages.return_warranty') }}</div>
@@ -319,7 +317,6 @@
         <div class="mt-8">
             <h2 class="text-xl font-medium mb-4">{{ $product->name}}</h2>
 
-            <!-- Tab Navigation -->
             <div class="overflow-x-auto">
                 <div class="flex border-b border-gray-200">
                     <button
@@ -339,19 +336,15 @@
                 </div>
             </div>
 
-            <!-- Tab Content -->
             <div id="tab-content">
-                <!-- Description Tab -->
                 <div class="tab-pane p-4" data-tab-content="description">
                     {!! $product->description !!}
                 </div>
 
-                <!-- Specification Tab -->
                 <div class="tab-pane hidden p-4" data-tab-content="specification">
                     {!! $product->specification !!}
                 </div>
 
-                <!-- Image Tab -->
                 <div class="tab-pane hidden p-4" data-tab-content="image">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('messages.image') }}</h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -365,7 +358,6 @@
                     </div>
                 </div>
 
-                <!--Video Tab -->
                 @if(!empty($product->video_link))
                     <div class="tab-pane hidden p-4" data-tab-content="video">
                         <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('messages.video') }}</h3>
@@ -385,7 +377,6 @@
 
         <br/><br/><br/>
 
-        <!-- Similar Products -->
         <div class="mb-8 md:mb-12">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg md:text-xl font-bold">{{ __('messages.similar_products') }}</h3>
@@ -409,9 +400,6 @@
 <script src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
 <script>
         $(document).ready(function() {
-            // -----------------------------------------------------------
-            // A. Single Product Page-এর নিজের + এবং - বাটন লজিক
-            // -----------------------------------------------------------
             $('#qty_increment').on('click', function(e) {
                 e.preventDefault();
                 let qtyInput = $('#product_quantity');
@@ -432,9 +420,6 @@
                 if (isNaN(val) || val < 1) $(this).val(1);
             });
 
-            // -----------------------------------------------------------
-            // B. Real-time Event Listener (পপআপ কার্ট চেঞ্জ হলে এটি রান হবে)
-            // -----------------------------------------------------------
             $(document).on('cartUpdated', function(event, cartData) {
                 let currentProductId = $('#product_id').val();
                 let currentVariationId = $('#variation_id').val();
@@ -442,7 +427,6 @@
                 let foundInCart = false;
                 let foundQty = 0;
 
-                // ✅ পুরনো shape: cartData = [{variation_id, quantity, ...}, ...]
                 if (cartData && Array.isArray(cartData)) {
                     $.each(cartData, function(key, item) {
                         if ((currentVariationId && item.variation_id == currentVariationId) || 
@@ -454,7 +438,6 @@
                     });
                 }
                 
-                // ✅ নতুন shape: cartData = { variationIds: [...], productIds: [...] }
                 if (cartData && cartData.variationIds) {
                     let vIds = (cartData.variationIds || []).map(String);
                     let pIds = (cartData.productIds || []).map(String);
@@ -464,7 +447,6 @@
                     }
                 }
 
-                // Quantity field update
                 if (foundInCart && foundQty > 0) {
                     $('#product_quantity').val(foundQty);
                 }
@@ -472,7 +454,6 @@
                     $('#product_quantity').val(1);
                 }
                 
-                // ✅ Button label update
                 let $btn = $('#cart_form .product-cart-btn');
                 if (foundInCart) {
                     $btn.find('.cart-btn-label').text($btn.data('in-cart-text') || 'Update Cart');
@@ -483,72 +464,86 @@
         });
 
     $(document).ready(function(){
-
         checkVariation();
     });
 
     function checkVariation(){
-
-        let variation_id=$(document).find('#variation_id').val() || 0;
-        if(variation_id==0){
+        let variation_id = $('#variation_id').val() || 0;
+        if(variation_id == 0){
             $('.addtocart').addClass('disabled').prop("disabled", true);
-        }else{
+        } else {
             $('.addtocart').removeClass('disabled').prop("disabled", false);
         }
     }
 
+    // ============================================================
+    // DYNAMIC VARIANT HANDLER — any attribute works
+    // ============================================================
+    $(document).on('click', '.variant-btn', function(){
+        var $btn   = $(this);
+        var $group = $btn.closest('.variant-group');
 
+        $group.find('.variant-btn').removeClass('active');
+        $btn.addClass('active');
+
+        setTimeout(function() {
+            getVariation();
+        }, 100);
+    });
 
     function getVariation(){
-        let url ='{{ route("front.getVariation",[$product->id])}}';
-        let color=$(document).find('.colors.active').text() || null;
-        let size=$(document).find('.sizes.active').text() || null;
+        var url = '{{ route("front.getVariation",[$product->id])}}';
+        var data = {};
+
+        // প্রতিটা group থেকে selected value collect
+        $('.variant-group').each(function(){
+            var $active = $(this).find('.variant-btn.active').first();
+            if ($active.length) {
+                var attr = $active.data('attr');
+                var val  = $active.data('value');
+                if (attr && val) {
+                    data[attr] = val;
+                }
+            }
+        });
+
         $.ajax({
             url: url,
             method: 'GET',
-            data:{size,color},
-            dataType :"JSON",
+            data: data,
+            dataType: "JSON",
             success: function (res) {
-
-                if(res.variation){
+                if (res.variation) {
                     $('#variation_id').val(res.variation.id);
-                    $('.product_price').text(res.variation.sell_price);
-                    
-                    // ✅ selected variation cart-এ আছে কিনা চেক করে button label update
-                    let vId = String(res.variation.id);
-                    let vIds = (window.cartState && window.cartState.variationIds || []).map(String);
-                    let $btn = $('#cart_form .product-cart-btn');
-                    
+
+                    // ✅ Server-provided formatted price
+                    if (res.display_price) {
+                        $('.product_price').text(res.display_price);
+                    }
+                    if (res.display_old_price) {
+                        $('.product_old_price').text(res.display_old_price).show();
+                    } else {
+                        $('.product_old_price').hide();
+                    }
+
+                    var vId = String(res.variation.id);
+                    var vIds = (window.cartState && window.cartState.variationIds || []).map(String);
+                    var $btn = $('#cart_form .product-cart-btn');
+
                     if (vIds.includes(vId)) {
                         $btn.find('.cart-btn-label').text($btn.data('in-cart-text') || 'Update Cart');
                     } else {
                         $btn.find('.cart-btn-label').text($btn.data('add-text') || 'Add to Cart');
                     }
+                } else {
+                    $('#variation_id').val('');
                 }
-                
                 checkVariation();
             }
         });
     }
 
-    $('.sizes').on('click', function(){
-        $('.sizes').removeClass('active');
-        $(this).addClass('active');
-    });
-
-    $('.colors').on('click', function(){
-        $('.colors').removeClass('active');
-        $(this).addClass('active');
-    });
-
-    $('.sizes, .colors').on('click', function(){
-        setTimeout(function() {
-            getVariation();
-        }, 100);
-    });
-    
     $(document).ready(function () {
-        // Initialize the main slider (slider-for)
         $('.slider-for').slick({
             slidesToShow: 1,
             slidesToScroll: 1,
@@ -561,7 +556,6 @@
             touchThreshold: 10
         });
 
-        // Initialize the thumbnail slider (slider-nav)
         $('.slider-nav').slick({
             slidesToShow: 4,
             slidesToScroll: 1,
@@ -574,35 +568,18 @@
             draggable: true,
             touchThreshold: 10,
             responsive: [
-                {
-                    breakpoint: 1024,
-                    settings: {
-                        slidesToShow: 4
-                    }
-                },
-                {
-                    breakpoint: 768,
-                    settings: {
-                        slidesToShow: 3
-                    }
-                },
-                {
-                    breakpoint: 480,
-                    settings: {
-                        slidesToShow: 2
-                    }
-                }
+                { breakpoint: 1024, settings: { slidesToShow: 4 } },
+                { breakpoint: 768,  settings: { slidesToShow: 3 } },
+                { breakpoint: 480,  settings: { slidesToShow: 2 } }
             ]
         });
 
-        // Fix for resize issues
         $(window).on('resize', function () {
             $('.slider-for').slick('resize');
             $('.slider-nav').slick('resize');
         });
     });
 
-    // JavaScript for tab functionality
     document.addEventListener('DOMContentLoaded', function () {
         const tabs = document.querySelectorAll('[data-tab]');
         const panes = document.querySelectorAll('.tab-pane');
@@ -621,7 +598,6 @@
         tabs[0].click();
     });
 
-    // review star
     const stars = document.querySelectorAll('i.fas.fa-star');
     stars.forEach(star => {
         star.addEventListener('click', function () {
@@ -630,7 +606,6 @@
 
             stars.forEach(s => {
                 const sId = parseInt(s.id.replace('star', ''));
-
                 if (sId <= starId) {
                     s.classList.add('text-yellow-400');
                     s.classList.remove('text-gray-300');
