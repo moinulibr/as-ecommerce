@@ -708,7 +708,7 @@ class ProductController extends Controller
             'display_old_price' => $displayOldPrice,
         ]);
     }
-    public function oldgetVariation($id)
+    public function beforeMultiVariationOldgetVariation($id)
     {
         $product = Product::find($id);
 
@@ -747,7 +747,6 @@ class ProductController extends Controller
 
     public function departProduct()
     {
-
         $id = request('id');
         $department = Department::find($id);
 

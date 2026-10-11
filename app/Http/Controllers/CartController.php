@@ -15,7 +15,6 @@ class CartController extends Controller
     public $productUtil;
     public function __construct(ProductUtil $productUtil)
     {
-
         $this->productUtil = $productUtil;
     }
 
