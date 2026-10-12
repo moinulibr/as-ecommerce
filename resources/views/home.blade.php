@@ -1,16 +1,15 @@
 @extends('layouts.app')
 
 @section('content')
-<!-- hidden কেটে দিয়ে w-full করা হয়েছে যেন সব ডিভাইসে শো করে -->
+<!-- hidden w-full  -->
 <nav class="w-full border-b border-gray-100 bg-white sticky top-0 z-50 backdrop-blur-md bg-white/90">
-   <!-- overflow-x-auto যুক্ত করা হয়েছে যেন মোবাইলে স্ক্রিন ভেঙে না গিয়ে ডানে-বামে স্ক্রোল করা যায় -->
+   <!-- overflow-x-auto -->
    <div class="container mx-auto px-4 md:px-6 overflow-x-auto no-scrollbar">
-        <!-- justify-start md:justify-center ব্যবহার করা হয়েছে যেন মোবাইলে বাম থেকে শুরু হয় এবং পিসিতে মাঝখানে থাকে -->
+        <!-- justify-start md:justify-center  -->
         <div class="flex items-center justify-start md:justify-center space-x-6 md:space-x-8 py-2 whitespace-nowrap text-sm font-medium tracking-wide">
-            <!-- অ্যাক্টিভ লিংক -->
+
             <a href="#" class="text-blue-600 pb-2 border-b-2 border-blue-600 transition-all duration-200 mb-[-9px]">Sanitary</a>
             
-            <!-- সাধারণ লিংক -->
             <a href="#" class="text-gray-600 hover:text-blue-600 pb-2 border-b-2 border-transparent hover:border-blue-600 transition-all duration-200 mb-[-9px]">Electrical</a>
             
             <a href="#" class="text-gray-600 hover:text-blue-600 pb-2 border-b-2 border-transparent hover:border-blue-600 transition-all duration-200 mb-[-9px]">Mobile Accessories</a>
@@ -18,7 +17,7 @@
     </div>
 </nav>
 
-<!-- ঐচ্ছিক: মোবাইলে স্ক্রোলবার লুকিয়ে রাখার জন্য নিচের CSS টুকু আপনার স্টাইলশীটে রাখতে পারেন -->
+
 <style>
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
