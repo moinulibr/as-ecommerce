@@ -53,11 +53,11 @@
                                 alt="{{ $cat->name}}" class="w-6 h-6 md:w-8 md:h-8 rounded-full" loading="lazy" decoding="async">
                                 <span class="text-sm font-bold">
                                     {{ $cat->name}}
-                                    <!--@if($cat->bd_name)-->
-                                    <!--    <span class="text-gray-400 text-sm font-normal ml-1">-->
-                                    <!--        ({{ $cat->bd_name }})-->
-                                    <!--    </span>-->
-                                    <!--@endif-->
+                                    {{-- @if($cat->bd_name)
+                                        <span class="text-gray-400 text-sm font-normal ml-1">-->
+                                            ({{ $cat->bd_name }})
+                                        </span>
+                                    @endif --}}
                                 </span>
                             </a>
                     </li>
