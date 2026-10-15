@@ -2,45 +2,46 @@
 use App\Models\Discount;
 
 
-function getProductDiscount($product)
-{
-    $now = date('Y-m-d');
+if (!function_exists('getProductDiscount')) {
+    function getProductDiscount($product)
+    {
+        $now = date('Y-m-d');
 
-    $discount = Discount::where('status', 1)
-        ->whereDate('start', '<=', $now)
-        ->whereDate('end', '>=', $now)
-        ->where(function ($q) use ($product) {
+        $discount = Discount::where('status', 1)
+            ->whereDate('start', '<=', $now)
+            ->whereDate('end', '>=', $now)
+            ->where(function ($q) use ($product) {
 
-            // Brand OR Category discount
-            $q->where('brand_id', $product->brand_id)
-              ->orWhere('category_id', $product->category_id);
+                // Brand OR Category discount
+                $q->where('brand_id', $product->brand_id)
+                ->orWhere('category_id', $product->category_id);
 
-            // Specific product discount
-            $q->orWhereHas('discount_prodcuts', function ($sub_q) use ($product) {
-                $sub_q->where('product_id', $product->id);
-            });
+                // Specific product discount
+                $q->orWhereHas('discount_prodcuts', function ($sub_q) use ($product) {
+                    $sub_q->where('product_id', $product->id);
+                });
 
-        })
-        ->orderBy('priority')
-        ->first();
+            })
+            ->orderBy('priority')
+            ->first();
 
-    $discount_price = 0;
-    
-    if ($discount) {
-        if ($discount->discount_type == 'percentage') {
-            $discount_price = (($product->sell_price??$product->price) * $discount->amount) / 100;
-        } else { // fixed
-            $discount_price = $discount->amount;
+        $discount_price = 0;
+        
+        if ($discount) {
+            if ($discount->discount_type == 'percentage') {
+                $discount_price = (($product->sell_price??$product->price) * $discount->amount) / 100;
+            } else { // fixed
+                $discount_price = $discount->amount;
+            }
         }
+        
+
+        return [
+            'discount_price' => $discount_price,
+            'discount'       => $discount
+        ];
     }
-    
-
-    return [
-        'discount_price' => $discount_price,
-        'discount'       => $discount
-    ];
 }
-
 
 function getInfo($key){
 
@@ -313,4 +314,56 @@ function login_url(){
     return route('login', ['redirect' => url()->current()]);
 }
 
+
+
+if (!function_exists('cartLookup')) {
+    /**
+     * Session cart থেকে variations এবং products এর ID lookup map বানায়।
+     * Static cache — এক request-এ যতবার কল হোক, session একবারই পড়ে।
+     *
+     * Return: [
+     *    'variations' => ['12' => true, '13' => true, ...],  // cart keys
+     *    'products'   => ['5'  => true, '8'  => true, ...],  // product ids
+     * ]
+     */
+    function cartLookup(): array
+    {
+        static $cache = null;
+        if ($cache !== null) {
+            return $cache;
+        }
+
+        $cart = session()->get('cart', []);
+        $vIds = [];
+        $pIds = [];
+
+        foreach ($cart as $vid => $item) {
+            $vIds[(string) $vid] = true;
+            if (!empty($item['product_id'])) {
+                $pIds[(string) $item['product_id']] = true;
+            }
+        }
+
+        return $cache = ['variations' => $vIds, 'products' => $pIds];
+    }
+}
+
+if (!function_exists('markCartStatus')) {
+    /**
+     * প্রতিটা product-এ $p->isAddedToCart property সেট করে
+     * (product_id দিয়ে match — zero extra query, zero lazy-load)
+     *
+     * @param  iterable $products  Collection / Paginator / array
+     * @return void
+     */
+    function markCartStatus($products): void
+    {
+        $lookup = cartLookup();
+
+        foreach ($products as $p) {
+            $pid = (string) $p->id;
+            $p->isAddedToCart = isset($lookup['products'][$pid]);
+        }
+    }
+}
 

@@ -1,4 +1,3 @@
-
 $(document).ready(function(){
 
     checkCheckout();
@@ -7,6 +6,12 @@ $(document).ready(function(){
 // Update page elements from cart AJAX response
 function applyCartResponseUpdates(res){
     if (!res) return;
+
+    // ✅ Cart state update + button refresh (defined in partials/js.blade.php)
+    if (typeof applyCartStateFromResponse === 'function') {
+        applyCartStateFromResponse(res);
+    }
+
     if (res.html) {
         $('div#cartModal').html(res.html);
     }
@@ -55,21 +60,12 @@ function normalizeCartQuantity($input){
 $(document).on('submit','form#cart_form', function(e){ 
 	e.preventDefault();
 
-	// let size=$(document).find('button.active').data('quantity');
     let size='';
-
-	// if (size.length==0) {
-	// 	toastr.error('Please Select A Size At First');
-
-	// 	return;
-	// }
 
     let clickedButton = $(document.activeElement).val();
 
     let data = $(this).serializeArray();
     data.push({ name: "button", value: clickedButton });
-
-
 
 	let url=$(this).attr('action');
 	let method=$(this).attr('method');
@@ -104,7 +100,8 @@ $(document).on('submit','form#cart_form', function(e){
 });
 
 
-$(document).on('submit','form#cart_remove_form', function(e) {
+// ✅ FIX #2: ID + CLASS দুটোই accept করবে
+$(document).on('submit','form#cart_remove_form, form.cart_remove_form', function(e) {
     
     
     e.preventDefault(); 
@@ -280,12 +277,12 @@ $(document).on('input', 'input[id^="quantity-"]', function () {
 
     cartTimer = setTimeout(function () {
         updateCart($input);
-    }, 600); // 500ms পরে call হবে
+    }, 600);
 });
 
 
 function updateCart($input) {
-    var $button = $input.parent(); // যাতে data-href পাওয়া যায়
+    var $button = $input.parent();
     let url = $button.closest('div').attr('data-href');
     let segment = $button.closest('div').attr('data-segment');
     let newVal = normalizeCartQuantity($input);
@@ -338,7 +335,7 @@ $(document).on('input', 'input[name="quantity"]', function () {
 
     cartQtyTimer = setTimeout(function () {
         updateCartQuantity($input);
-    }, 600); // 500ms পরে call হবে
+    }, 600);
 });
 
 // Common Update Function

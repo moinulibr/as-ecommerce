@@ -72,8 +72,8 @@ class Product extends Model
     }
 
     public function variation() {
-
         return $this->belongsTo(Variation::class,'id','product_id')->orderBy('id');
+        return $this->hasOne(Variation::class, 'product_id')->orderBy('id');//feature e tik korte hobe ei rokom
     }
     
     

@@ -20,6 +20,17 @@
     <!-- Overlay for Background Dimming -->
     <div id="cartOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-40" onclick="closeCartModal()"></div>
 
+    {{-- ✅ Cart state (session cart থেকে) — JS-এ realtime button update এর জন্য --}}
+    @php
+        $__cartState = cartLookup();
+    @endphp
+    <script>
+        window.cartState = {
+            variationIds: @json(array_keys($__cartState['variations'])),
+            productIds:   @json(array_keys($__cartState['products']))
+        };
+    </script>
+
     <!-- Slick Slider JS -->
     @include('partials.js')
 </body>

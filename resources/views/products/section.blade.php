@@ -2,6 +2,9 @@
     $p_price = getProductDiscount($sproduct);
     $discount_price = $p_price['discount_price'];
     $discount = $p_price['discount'];
+
+    // ✅ in-cart flag (controller থেকে markCartStatus() দিয়ে set করা)
+    $inCart = !empty($sproduct->isAddedToCart);
 @endphp
 
 <div class="relative border rounded overflow-hidden">
@@ -51,23 +54,51 @@
         @endif
     </div>
 
-    <!-- Add to Cart -->
+    <!-- ============================================================ -->
+    <!-- Add to Cart / Already in Cart                                -->
+    <!-- data-product-id / data-variation-id এখন BUTTON-এ (JS এখান থেকে পড়বে) -->
+    <!-- ============================================================ -->
+
     @if($sproduct->type == 'single')
-        <form action="{{ route('front.carts.store') }}" method="post" id="cart_form">
+        <form action="{{ route('front.carts.store') }}" method="post" id="cart_form" class="cart-form">
             @csrf
             <input type="hidden" name="product_id" value="{{ $sproduct->id }}">
-            <input type="hidden" name="variation_id" value="{{ $sproduct->variation->id }}">
+            <input type="hidden" name="variation_id" value="{{ $sproduct->variation->id ?? '' }}">
             <input type="hidden" name="quantity" value="1">
 
             <button name="action" value="cart" type="submit"
-                    class="w-full bg-gray-900 text-white py-2 rounded hover:bg-gray-800 transition text-sm md:text-base">
-                {{ __('messages.add_to_cart') }}
+                    @if($inCart) disabled @endif
+                    class="product-cart-btn w-full py-2 rounded transition text-sm md:text-base
+                        {{ $inCart
+                                ? 'bg-green-600 text-white cursor-not-allowed opacity-90'
+                                : 'bg-gray-900 hover:bg-gray-800 text-white' }}"
+                    data-product-id="{{ $sproduct->id }}"
+                    data-variation-id="{{ $sproduct->variation->id ?? '' }}"
+                    data-add-text="{{ __('messages.add_to_cart') }}"
+                    data-in-cart-text="{{ __('messages.already_in_cart') ?? 'Already in cart' }}">
+                {{ $inCart
+                    ? (__('messages.already_in_cart') ?? 'Already in cart')
+                    : __('messages.add_to_cart') }}
             </button>
         </form>
     @elseif($sproduct->type == 'variable')
-        <a href="{{ route('front.products.show', [$sproduct->slug]) }}"
-           class="block w-full bg-gray-900 text-white py-2 rounded hover:bg-gray-800 transition text-sm md:text-base text-center">
-            {{ __('messages.add_to_cart') }}
-        </a>
+        @if($inCart)
+            <button type="button" disabled
+                    class="product-cart-btn block w-full py-2 rounded bg-green-600 text-white cursor-not-allowed opacity-90 text-sm md:text-base text-center"
+                    data-product-id="{{ $sproduct->id }}"
+                    data-add-text="{{ __('messages.add_to_cart') }}"
+                    data-in-cart-text="{{ __('messages.already_in_cart') ?? 'Already in cart' }}">
+                {{ __('messages.already_in_cart') ?? 'Already in cart' }}
+            </button>
+        @else
+            <a href="{{ route('front.products.show', [$sproduct->slug]) }}"
+               class="product-cart-btn block w-full py-2 rounded bg-gray-900 hover:bg-gray-800 text-white text-sm md:text-base text-center transition"
+               data-product-id="{{ $sproduct->id }}"
+               data-add-text="{{ __('messages.add_to_cart') }}"
+               data-in-cart-text="{{ __('messages.already_in_cart') ?? 'Already in cart' }}">
+                {{ __('messages.add_to_cart') }}
+            </a>
+        @endif
     @endif
+
 </div>

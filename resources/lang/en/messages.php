@@ -40,6 +40,7 @@ return [
     'name_desc' => 'Descending Ordering [Z-A]',
     'select_brand' => 'Select Brand',
     'add_to_cart' => 'Add to Cart',
+    'already_in_cart' => 'Already in cart',
     'updated_to_cart' => 'Update Cart',
     'reviews' => 'Reviews',
     'similar_products' => 'Similar Products',
